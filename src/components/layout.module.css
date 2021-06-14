@@ -1,29 +1,10 @@
 .container {
     margin: auto;
     max-width: 500px;
-    font-family: sans-serif
+    font-family: sans-serif;
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .heading {
     color: rebeccapurple
 }
-
-.nav-links {
-    display: flex;
-    list-style: none;
-    padding-left: 0;
-}
-
-.nav-link-item {
-    padding-right: 2rem;
-}
-
-.nav-link-text {
-    color: black;
-}
-
-.site-title {
-    font-size: 3rem;
-    color: gray;
-    font-weight: 700;
-  }
