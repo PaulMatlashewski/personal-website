@@ -52,7 +52,7 @@ const FluidSim = () => {
     const simParams = {
       resolution: 128,
       inkParams: {
-        resolution: 64,
+        resolution: 32,
         splatRadius: 0.02,
         internalFormat: gl.RGBA,
         format: gl.RGBA,

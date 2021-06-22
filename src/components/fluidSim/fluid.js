@@ -120,6 +120,11 @@ export default class Fluid {
     gl.uniform1f(this.splatProgram.uniforms.radius, this.ink.splatRadius);
     gl.uniform1f(this.splatProgram.uniforms.aspect, gl.canvas.clientWidth / gl.canvas.clientHeight);
 
+    // Textures
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.ink.src.texture);
+    gl.uniform1i(this.splatProgram.uniforms.inkTexture, 0);
+
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     this.ink.flip();
   }

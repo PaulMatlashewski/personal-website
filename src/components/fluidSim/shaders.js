@@ -24,18 +24,21 @@ export const fragmentSource = `
 
 export const splatSource =  `
   precision highp float;
+  precision highp sampler2D;
 
   varying vec2 vUv;
   uniform vec2 point;
   uniform float radius;
   uniform float aspect;
+  uniform sampler2D inkTexture;
 
   void main() {
     vec3 color = vec3(0, 1, 1);
     vec2 p = vUv - point.xy;
     p.x *= aspect;
     vec3 splat = exp(-dot(p, p) / radius) * color;
-    gl_FragColor = vec4(splat, 1.0);
+    vec3 inkValue = texture2D(inkTexture, vUv).xyz;
+    gl_FragColor = vec4(splat + inkValue, 1.0);
   }
 `;
 
@@ -72,9 +75,7 @@ export const advectSource = `
   }
 
   void main() {
-    vec2 coord = vUv - dt * texture2D(velocity, vUv).xy * velocityTexelSize;
-    gl_FragColor = texture2D(ink, coord);
-    // vec2 uv = vUv - dt * bilinearInterp(velocity, vUv, velocityTexelSize).xy * velocityTexelSize;
-    // gl_FragColor = bilinearInterp(ink, uv, inkTexelSize);
+    vec2 uv = vUv - dt * bilinearInterp(velocity, vUv, velocityTexelSize).xy * velocityTexelSize;
+    gl_FragColor = bilinearInterp(ink, uv, inkTexelSize);
   }
 `;
