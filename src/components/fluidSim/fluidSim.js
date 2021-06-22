@@ -52,12 +52,19 @@ const FluidSim = () => {
     const simParams = {
       resolution: 128,
       inkParams: {
-        resolution: 16,
+        resolution: 64,
         splatRadius: 0.02,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
         type: gl.FLOAT,
-        filterType: gl.NEAREST,
+        filterType: gl.LINEAR,
+      },
+      velocityParams: {
+        resolution: 128,
+        internalFormat: gl.RGBA,
+        format: gl.RGBA,
+        type: gl.FLOAT,
+        filterType: gl.LINEAR,
       }
     };
     const fluid = new Fluid(gl, simParams);
@@ -65,7 +72,9 @@ const FluidSim = () => {
     const render = () => {
       if (splatPoint) {
         fluid.splat(gl, splatPoint);
+        splatPoint = null;
       }
+      fluid.advectInk(gl, 0.1);
       fluid.drawScene(gl);
       requestAnimationFrame(render);
     }

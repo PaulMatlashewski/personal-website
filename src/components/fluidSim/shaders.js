@@ -39,8 +39,42 @@ export const splatSource =  `
   }
 `;
 
-export const initSource = `
+export const setValueSource = `
+  precision highp float;
+
+  uniform vec4 value;
+
   void main() {
-    gl_FragColor = vec4(0, 0, 0, 1);
+    gl_FragColor = value;
+  }
+`;
+
+export const advectSource = `
+  precision highp float;
+  precision highp sampler2D;
+
+  varying vec2 vUv;
+  uniform vec2 velocityTexelSize;
+  uniform vec2 inkTexelSize;
+  uniform float dt;
+  uniform sampler2D velocity;
+  uniform sampler2D ink;
+
+  vec4 bilinearInterp(sampler2D values, vec2 uv, vec2 texelSize) {
+    vec2 p = uv / texelSize - 0.5;
+    vec2 fp = fract(p);
+    vec2 ip = floor(p);
+    vec4 a = texture2D(values, (ip + vec2(0.5, 0.5)) * texelSize);
+    vec4 b = texture2D(values, (ip + vec2(1.5, 0.5)) * texelSize);
+    vec4 c = texture2D(values, (ip + vec2(0.5, 1.5)) * texelSize);
+    vec4 d = texture2D(values, (ip + vec2(1.5, 1.5)) * texelSize);
+    return mix(mix(a, b, fp.x), mix(c, d, fp.x), fp.y);
+  }
+
+  void main() {
+    vec2 coord = vUv - dt * texture2D(velocity, vUv).xy * velocityTexelSize;
+    gl_FragColor = texture2D(ink, coord);
+    // vec2 uv = vUv - dt * bilinearInterp(velocity, vUv, velocityTexelSize).xy * velocityTexelSize;
+    // gl_FragColor = bilinearInterp(ink, uv, inkTexelSize);
   }
 `;
