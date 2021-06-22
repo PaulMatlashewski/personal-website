@@ -20,6 +20,7 @@
     "gatsby-plugin-image": "^1.7.1",
     "gatsby-plugin-sharp": "^3.7.1",
     "gatsby-source-filesystem": "^3.7.1",
+    "gl-matrix": "^3.3.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1"
   }
