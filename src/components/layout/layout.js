@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { Link, useStaticQuery, graphql } from 'gatsby'
-import Navbar from './navbar/navbar'
+import { useStaticQuery, graphql } from 'gatsby'
+import Navbar from '../navbar/navbar'
 import {
   container,
   heading
