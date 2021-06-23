@@ -51,7 +51,7 @@ const FluidSim = () => {
     const gl = getWebGLContext(canvas);
     const simParams = {
       inkParams: {
-        resolution: 128,
+        resolution: 32,
         splatRadius: 0.02,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
@@ -73,7 +73,7 @@ const FluidSim = () => {
         fluid.splat(gl, splatPoint);
         splatPoint = null;
       }
-      fluid.advectInk(gl, 0.01);
+      fluid.advect(gl, fluid.ink, 0.01);
       fluid.drawScene(gl);
       requestAnimationFrame(render);
     }

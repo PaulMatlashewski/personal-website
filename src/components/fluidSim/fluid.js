@@ -25,8 +25,8 @@ export default class Fluid {
     this.ink.dst.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 1]);
 
     // Initialize velocity
-    this.velocity.u.src.setTextureValue(gl, this.positionBuffer, [0.1, 0, 0, 0]);
-    this.velocity.u.dst.setTextureValue(gl, this.positionBuffer, [0.1, 0, 0, 0]);
+    this.velocity.u.src.setTextureValue(gl, this.positionBuffer, [0.5, 0, 0, 0]);
+    this.velocity.u.dst.setTextureValue(gl, this.positionBuffer, [0.5, 0, 0, 0]);
     this.velocity.v.src.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 0]);
     this.velocity.v.dst.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 0]);
   }
@@ -44,10 +44,10 @@ export default class Fluid {
     return positionBuffer;
   }
 
-  advectInk(gl, dt) {
+  advect(gl, value, dt) {
     gl.useProgram(this.advectProgram.program);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.ink.dst.framebuffer);
-    gl.viewport(0, 0, ...this.ink.size);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, value.dst.framebuffer);
+    gl.viewport(0, 0, ...value.size);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clearDepth(1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -59,8 +59,8 @@ export default class Fluid {
 
     // Uniforms
     gl.uniform2f(this.advectProgram.uniforms.velocitySize, ...this.velocity.size);
-    gl.uniform2f(this.advectProgram.uniforms.valueSize, ...this.ink.size);
-    gl.uniform2f(this.advectProgram.uniforms.valueOffset, ...this.ink.offset);
+    gl.uniform2f(this.advectProgram.uniforms.valueSize, ...value.size);
+    gl.uniform2f(this.advectProgram.uniforms.valueOffset, ...value.offset);
     gl.uniform1f(this.advectProgram.uniforms.dt, dt);
 
     // Textures
@@ -72,10 +72,10 @@ export default class Fluid {
     gl.bindTexture(gl.TEXTURE_2D, this.velocity.v.src.texture);
     gl.uniform1i(this.advectProgram.uniforms.value, 2);
     gl.activeTexture(gl.TEXTURE2);
-    gl.bindTexture(gl.TEXTURE_2D, this.ink.src.texture);
+    gl.bindTexture(gl.TEXTURE_2D, value.src.texture);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    this.ink.flip();
+    value.flip();
   }
 
   splat(gl, point) {
