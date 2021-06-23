@@ -1,15 +1,8 @@
-import FluidValue from './fluidValue'
+import { DoubleFluidValue } from './fluidValue'
 
-export default class Ink {
+export default class Ink extends DoubleFluidValue {
   constructor(gl, params) {
+    super(gl, params, { x: 0, y: 0 }, [0.5, 0.5]);
     this.splatRadius = params.splatRadius;
-    this.src = new FluidValue(gl, params);
-    this.dst = new FluidValue(gl, params);
-  }
-
-  flip() {
-    let tmp = this.src;
-    this.src = this.dst;
-    this.dst = tmp;
   }
 }

@@ -1,28 +1,14 @@
-export default class FluidValue {
-  constructor(gl, params) {
-    this.resolution = params.resolution;
-    const { width, height } = this.getResolution(gl, params.resolution);
-    this.width = width
-    this.height = height
+import ShaderProgram from './shaderProgram'
+import { vertexSource, setValueSource } from './shaders'
+
+class FluidValue {
+  constructor(gl, params, size) {
+    this.width = size[0]
+    this.height = size[1]
     this.texture = this.initTexture(gl, params);
     this.framebuffer = this.initFramebuffer(gl)
-  }
 
-  // Get the texture dimensions. Use the configured resolution for the minimum
-  // drawing dimension (height in landscape mode and width in portrait mode)
-  // and scale the maximum dimension by the aspect ratio of the drawing area.
-  getResolution(gl, resolution) {
-    const aspectRatio = gl.drawingBufferWidth / gl.drawingBufferHeight;
-    let width;
-    let height;
-    if (gl.drawingBufferWidth > gl.drawingBufferHeight) {
-      width = Math.round(resolution * aspectRatio);
-      height = Math.round(resolution);
-    } else {
-      width = Math.round(resolution);
-      height = Math.round(resolution / aspectRatio);
-    }
-    return { width, height }
+    this.setValueProgram = new ShaderProgram(gl, vertexSource, setValueSource);
   }
 
   initTexture(gl, params) {
@@ -41,5 +27,54 @@ export default class FluidValue {
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture, 0);
     return framebuffer;
+  }
+
+  setTextureValue(gl, positionBuffer, value) {
+    gl.useProgram(this.setValueProgram.program);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+    gl.viewport(0, 0, this.width, this.height);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearDepth(1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    // Vertex positions
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.vertexAttribPointer(this.setValueProgram.attributes.aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(this.setValueProgram.attributes.aVertexPosition);
+
+    // Texture value
+    gl.uniform4f(this.setValueProgram.uniforms.value, ...value)
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+}
+
+export class DoubleFluidValue {
+  constructor(gl, params, sizeOffset, texelOffset) {
+    this.resolution = params.resolution;
+    this.size = this.getSize(gl, sizeOffset);
+    this.offset = texelOffset;
+    this.src = new FluidValue(gl, params, this.size);
+    this.dst = new FluidValue(gl, params, this.size);
+  }
+
+  getSize(gl, offset) {
+    const aspectRatio = gl.drawingBufferWidth / gl.drawingBufferHeight;
+    let width;
+    let height;
+    if (gl.drawingBufferWidth > gl.drawingBufferHeight) {
+      width = Math.round(this.resolution * aspectRatio);
+      height = Math.round(this.resolution);
+    } else {
+      width = Math.round(this.resolution);
+      height = Math.round(this.resolution / aspectRatio);
+    }
+    return [width + offset.x, height + offset.y];
+  }
+
+  flip() {
+    let tmp = this.src;
+    this.src = this.dst;
+    this.dst = tmp;
   }
 }

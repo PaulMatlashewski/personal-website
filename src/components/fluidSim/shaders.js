@@ -1,4 +1,4 @@
-export const vertexSource = `
+export const vertexSource = /*glsl*/`
   precision highp float;
 
   attribute vec2 aVertexPosition;
@@ -10,7 +10,7 @@ export const vertexSource = `
   }
 `;
 
-export const fragmentSource = `
+export const fragmentSource = /*glsl*/`
   precision highp float;
   precision highp sampler2D;
 
@@ -22,7 +22,7 @@ export const fragmentSource = `
   }
 `;
 
-export const splatSource =  `
+export const splatSource =  /*glsl*/`
   precision highp float;
   precision highp sampler2D;
 
@@ -42,7 +42,7 @@ export const splatSource =  `
   }
 `;
 
-export const setValueSource = `
+export const setValueSource = /*glsl*/`
   precision highp float;
 
   uniform vec4 value;
@@ -52,30 +52,60 @@ export const setValueSource = `
   }
 `;
 
-export const advectSource = `
+export const advectSource = /*glsl*/`
   precision highp float;
   precision highp sampler2D;
 
   varying vec2 vUv;
-  uniform vec2 velocityTexelSize;
-  uniform vec2 inkTexelSize;
-  uniform float dt;
-  uniform sampler2D velocity;
-  uniform sampler2D ink;
 
-  vec4 bilinearInterp(sampler2D values, vec2 uv, vec2 texelSize) {
-    vec2 p = uv / texelSize - 0.5;
-    vec2 fp = fract(p);
-    vec2 ip = floor(p);
-    vec4 a = texture2D(values, (ip + vec2(0.5, 0.5)) * texelSize);
-    vec4 b = texture2D(values, (ip + vec2(1.5, 0.5)) * texelSize);
-    vec4 c = texture2D(values, (ip + vec2(0.5, 1.5)) * texelSize);
-    vec4 d = texture2D(values, (ip + vec2(1.5, 1.5)) * texelSize);
-    return mix(mix(a, b, fp.x), mix(c, d, fp.x), fp.y);
+  uniform vec2 velocitySize;
+  uniform vec2 valueSize;
+  uniform vec2 valueOffset;
+  uniform float dt;
+  uniform sampler2D uVelocity;
+  uniform sampler2D vVelocity;
+  uniform sampler2D value;
+
+  vec4 bilinear_interp(sampler2D texture, vec2 p, vec2 offset, vec2 size) {
+    // Convert point in uv coordinates to texel coordinates
+    vec2 p0 = p * size - offset;
+
+    // Interpolation grid values
+    vec2 p1 = floor(p0);
+    vec2 p2 = vec2(1.0, 0.0) + p1;
+    vec2 p3 = vec2(0.0, 1.0) + p1;
+    vec2 p4 = vec2(1.0, 1.0) + p1;
+
+    // Clamp interpolation points to grid
+    // float x_min = 0.0;
+    // float y_min = 0.0;
+    // float x_max = size.x - 1.0;
+    // float y_max = size.y - 1.0;
+    // p1 = vec2(max(min(p1.x, x_max), x_min), max(min(p1.y, y_max), y_min));
+    // p2 = vec2(max(min(p2.x, x_max), x_min), max(min(p2.y, y_max), y_min));
+    // p3 = vec2(max(min(p3.x, x_max), x_min), max(min(p3.y, y_max), y_min));
+    // p4 = vec2(max(min(p4.x, x_max), x_min), max(min(p4.y, y_max), y_min));
+
+    // Sample texture at grid values
+    vec4 a = texture2D(texture, p1 / size);
+    vec4 b = texture2D(texture, p2 / size);
+    vec4 c = texture2D(texture, p3 / size);
+    vec4 d = texture2D(texture, p4 / size);
+
+    // Bilinear interpolation
+    vec2 s = fract(p0);
+    return mix(mix(a, b, s.x), mix(c, d, s.x), s.y);
+  }
+
+  vec2 euler(sampler2D uVelocity, sampler2D vVelocity, vec2 p, vec2 size, float dt) {
+    vec4 u = bilinear_interp(uVelocity, p, vec2(0.0, 0.5), size);
+    vec4 v = bilinear_interp(vVelocity, p, vec2(0.5, 0.0), size);
+    return p.xy + vec2(u.x, v.x) * dt;
   }
 
   void main() {
-    vec2 uv = vUv - dt * bilinearInterp(velocity, vUv, velocityTexelSize).xy * velocityTexelSize;
-    gl_FragColor = bilinearInterp(ink, uv, inkTexelSize);
+    // Semi-Lagrangian advection
+    vec2 p = euler(uVelocity, vVelocity, vUv, velocitySize, -dt);
+    gl_FragColor = bilinear_interp(value, p, valueOffset, valueSize);
   }
 `;

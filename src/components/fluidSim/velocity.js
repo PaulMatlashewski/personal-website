@@ -1,14 +1,25 @@
-import FluidValue from './fluidValue'
+import { DoubleFluidValue } from './fluidValue'
 
 export default class Velocity {
   constructor(gl, params) {
-    this.src = new FluidValue(gl, params);
-    this.dst = new FluidValue(gl, params);
+    this.resolution = params.resolution;
+    this.size = this.getSize(gl);
+    this.u = new DoubleFluidValue(gl, params, { x: 1, y: 0 }, [0.0, 0.5]);
+    this.v = new DoubleFluidValue(gl, params, { x: 0, y: 1 }, [0.5, 0.0]);
   }
 
-  flip() {
-    let tmp = this.src;
-    this.src = this.dst;
-    this.dst = tmp;
+  getSize(gl) {
+    const aspectRatio = gl.drawingBufferWidth / gl.drawingBufferHeight;
+    let width;
+    let height;
+    if (gl.drawingBufferWidth > gl.drawingBufferHeight) {
+      width = Math.round(this.resolution * aspectRatio);
+      height = Math.round(this.resolution);
+    } else {
+      width = Math.round(this.resolution);
+      height = Math.round(this.resolution / aspectRatio);
+    }
+    return [width, height];
   }
+
 }
