@@ -3,6 +3,8 @@ import { DoubleFluidValue } from './fluidValue'
 export default class Velocity {
   constructor(gl, params) {
     this.resolution = params.resolution;
+    this.splatRadius = params.splatRadius;
+    this.splatForce = params.splatForce;
     this.size = this.getSize(gl);
     this.u = new DoubleFluidValue(gl, params, { x: 1, y: 0 }, [0.0, 0.5]);
     this.v = new DoubleFluidValue(gl, params, { x: 0, y: 1 }, [0.5, 0.0]);

@@ -28,17 +28,17 @@ export const splatSource =  /*glsl*/`
 
   varying vec2 vUv;
   uniform vec2 point;
+  uniform vec3 value;
   uniform float radius;
   uniform float aspect;
-  uniform sampler2D inkTexture;
+  uniform sampler2D texture;
 
   void main() {
-    vec3 color = vec3(0, 1, 1);
     vec2 p = vUv - point.xy;
     p.x *= aspect;
-    vec3 splat = exp(-dot(p, p) / radius) * color;
-    vec3 inkValue = texture2D(inkTexture, vUv).xyz;
-    gl_FragColor = vec4(splat + inkValue, 1.0);
+    vec3 splatValue = exp(-dot(p, p) / radius) * value;
+    vec3 baseValue = texture2D(texture, vUv).xyz;
+    gl_FragColor = vec4(splatValue + baseValue, 1.0);
   }
 `;
 

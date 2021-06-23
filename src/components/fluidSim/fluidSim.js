@@ -37,22 +37,44 @@ const FluidSim = () => {
   }
 
   React.useEffect(() => {
-    let splatPoint = null;
+    let splatPoint = {
+      x: null,
+      y: null,
+      dx: null,
+      dy: null,
+      t: null,
+      down: false,
+      moved: false,
+    };
 
     const canvas = canvasRef.current
     resizeCanvas(canvas);
 
-    canvas.addEventListener('click', e => {
-      const x = e.offsetX / canvas.width
-      const y = 1 - e.offsetY / canvas.height
-      splatPoint = [x, y];
+    canvas.addEventListener('mousedown', e => {
+      splatPoint.x = e.offsetX / canvas.width;
+      splatPoint.y = 1 - e.offsetY / canvas.height;
+      splatPoint.down = true;
+    });
+
+    canvas.addEventListener('mousemove', e => {
+      const x = e.offsetX / canvas.width;
+      const y = 1 - e.offsetY / canvas.height;
+      splatPoint.dx = x - splatPoint.x;
+      splatPoint.dy = y - splatPoint.y;
+      splatPoint.x = x;
+      splatPoint.y = y;
+      splatPoint.moved = (Math.abs(splatPoint.dx) > 0) || (Math.abs(splatPoint.dy) > 0)
+    });
+
+    canvas.addEventListener('mouseup', e => {
+      splatPoint.down = false;
     });
 
     const gl = getWebGLContext(canvas);
     const simParams = {
       inkParams: {
         resolution: 32,
-        splatRadius: 0.02,
+        splatRadius: 0.002,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
         type: gl.FLOAT,
@@ -60,6 +82,8 @@ const FluidSim = () => {
       },
       velocityParams: {
         resolution: 128,
+        splatRadius: 0.002,
+        splatForce: 1000,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
         type: gl.FLOAT,
@@ -69,11 +93,10 @@ const FluidSim = () => {
     const fluid = new Fluid(gl, simParams);
 
     const render = () => {
-      if (splatPoint) {
+      if (splatPoint.down && splatPoint.moved) {
         fluid.splat(gl, splatPoint);
-        splatPoint = null;
       }
-      fluid.advect(gl, fluid.ink, 0.01);
+      fluid.step(gl, 0.01);
       fluid.drawScene(gl);
       requestAnimationFrame(render);
     }

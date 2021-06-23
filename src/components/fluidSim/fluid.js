@@ -25,8 +25,8 @@ export default class Fluid {
     this.ink.dst.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 1]);
 
     // Initialize velocity
-    this.velocity.u.src.setTextureValue(gl, this.positionBuffer, [0.5, 0, 0, 0]);
-    this.velocity.u.dst.setTextureValue(gl, this.positionBuffer, [0.5, 0, 0, 0]);
+    this.velocity.u.src.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 0]);
+    this.velocity.u.dst.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 0]);
     this.velocity.v.src.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 0]);
     this.velocity.v.dst.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 0]);
   }
@@ -42,6 +42,16 @@ export default class Fluid {
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
     return positionBuffer;
+  }
+
+  step(gl, dt) {
+    this.advect(gl, this.ink, dt);
+    this.advect(gl, this.velocity.u, dt);
+    this.advect(gl, this.velocity.v, dt);
+
+    this.ink.flip();
+    this.velocity.u.flip();
+    this.velocity.v.flip();
   }
 
   advect(gl, value, dt) {
@@ -75,10 +85,9 @@ export default class Fluid {
     gl.bindTexture(gl.TEXTURE_2D, value.src.texture);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    value.flip();
   }
 
-  splat(gl, point) {
+  splat(gl, splatPoint) {
     gl.useProgram(this.splatProgram.program);
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.ink.dst.framebuffer);
     gl.viewport(0, 0, ...this.ink.size);
@@ -92,17 +101,49 @@ export default class Fluid {
     gl.enableVertexAttribArray(this.splatProgram.attributes.aVertexPosition);
 
     // Uniforms
-    gl.uniform2f(this.splatProgram.uniforms.point, ...point);
+    gl.uniform2f(this.splatProgram.uniforms.point, splatPoint.x, splatPoint.y);
+    gl.uniform3f(this.splatProgram.uniforms.value, 0, 1, 1);
     gl.uniform1f(this.splatProgram.uniforms.radius, this.ink.splatRadius);
     gl.uniform1f(this.splatProgram.uniforms.aspect, gl.canvas.clientWidth / gl.canvas.clientHeight);
 
     // Textures
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.ink.src.texture);
-    gl.uniform1i(this.splatProgram.uniforms.inkTexture, 0);
+    gl.uniform1i(this.splatProgram.uniforms.texture, 0);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    // Splat u velocity
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.velocity.u.dst.framebuffer);
+    gl.viewport(0, 0, ...this.velocity.u.size);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearDepth(1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    gl.uniform3f(this.splatProgram.uniforms.value, splatPoint.dx * this.velocity.splatForce, 0, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.velocity.u.src.texture);
+    gl.uniform1i(this.splatProgram.uniforms.texture, 0);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    // Splat v velocity
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.velocity.v.dst.framebuffer);
+    gl.viewport(0, 0, ...this.velocity.v.size);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearDepth(1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    gl.uniform3f(this.splatProgram.uniforms.value, splatPoint.dy * this.velocity.splatForce, 0, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.velocity.v.src.texture);
+    gl.uniform1i(this.splatProgram.uniforms.texture, 0);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
     this.ink.flip();
+    this.velocity.u.flip();
+    this.velocity.v.flip();
   }
 
   drawScene(gl) {
