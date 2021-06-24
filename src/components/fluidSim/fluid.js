@@ -157,8 +157,9 @@ export default class Fluid {
     gl.enableVertexAttribArray(this.splatProgram.attributes.aVertexPosition);
 
     // Uniforms
+    let c = this.ink.generateColor();
     gl.uniform2f(this.splatProgram.uniforms.point, splatPoint.x, splatPoint.y);
-    gl.uniform3f(this.splatProgram.uniforms.value, 0, 1, 1);
+    gl.uniform3f(this.splatProgram.uniforms.value, c.r, c.g, c.b);
     gl.uniform1f(this.splatProgram.uniforms.radius, this.ink.splatRadius);
     gl.uniform1f(this.splatProgram.uniforms.aspect, gl.canvas.clientWidth / gl.canvas.clientHeight);
 
