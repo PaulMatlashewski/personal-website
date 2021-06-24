@@ -6,7 +6,8 @@ import {
   vertexSource,
   fragmentSource,
   splatSource,
-  advectSource,
+  linearAdvectSource,
+  cubicAdvectSource,
   jacobiSource,
 } from './shaders'
 
@@ -18,7 +19,7 @@ export default class Fluid {
 
     this.renderProgram = new ShaderProgram(gl, vertexSource, fragmentSource);
     this.splatProgram = new ShaderProgram(gl, vertexSource, splatSource);
-    this.advectProgram = new ShaderProgram(gl, vertexSource, advectSource);
+    this.advectProgram = new ShaderProgram(gl, vertexSource, linearAdvectSource);
     this.jacobiProgram = new ShaderProgram(gl, vertexSource, jacobiSource);
 
     // Fluid values
@@ -36,8 +37,6 @@ export default class Fluid {
     this.velocity.v.src.setTextureValue(gl, this.positionBuffer, [0.0, 0, 0, 1]);
     this.velocity.v.dst.setTextureValue(gl, this.positionBuffer, [0.0, 0, 0, 1]);
     this.velocity.div.src.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 1]);
-
-    // TODO: Debug divergence and pressure not rendering to canvas
 
     // Initialize pressure
     this.pressure.src.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 1]);
