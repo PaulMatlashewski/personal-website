@@ -1,34 +1,47 @@
 import Ink from './ink'
 import Velocity from './velocity'
+import Pressure from './pressure'
 import ShaderProgram from './shaderProgram'
 import {
   vertexSource,
   fragmentSource,
   splatSource,
   advectSource,
+  jacobiSource,
 } from './shaders'
 
 export default class Fluid {
   constructor(gl, simParams) {
+    this.jacobiIters = simParams.jacobiIters;
+
     this.positionBuffer = this.initPositionBuffer(gl);
 
     this.renderProgram = new ShaderProgram(gl, vertexSource, fragmentSource);
     this.splatProgram = new ShaderProgram(gl, vertexSource, splatSource);
     this.advectProgram = new ShaderProgram(gl, vertexSource, advectSource);
+    this.jacobiProgram = new ShaderProgram(gl, vertexSource, jacobiSource);
 
     // Fluid values
     this.ink = new Ink(gl, simParams.inkParams);
     this.velocity = new Velocity(gl, simParams.velocityParams);
+    this.pressure = new Pressure(gl, simParams.pressureParams);
 
     // Initialize ink with zero values
     this.ink.src.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 1]);
     this.ink.dst.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 1]);
 
     // Initialize velocity
-    this.velocity.u.src.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 0]);
-    this.velocity.u.dst.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 0]);
-    this.velocity.v.src.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 0]);
-    this.velocity.v.dst.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 0]);
+    this.velocity.u.src.setTextureValue(gl, this.positionBuffer, [0.0, 0, 0, 1]);
+    this.velocity.u.dst.setTextureValue(gl, this.positionBuffer, [0.0, 0, 0, 1]);
+    this.velocity.v.src.setTextureValue(gl, this.positionBuffer, [0.0, 0, 0, 1]);
+    this.velocity.v.dst.setTextureValue(gl, this.positionBuffer, [0.0, 0, 0, 1]);
+    this.velocity.div.src.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 1]);
+
+    // TODO: Debug divergence and pressure not rendering to canvas
+
+    // Initialize pressure
+    this.pressure.src.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 1]);
+    this.pressure.dst.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 1]);
   }
 
   initPositionBuffer(gl) {
@@ -44,14 +57,56 @@ export default class Fluid {
     return positionBuffer;
   }
 
-  step(gl, dt) {
+  step(gl, dt, splatPoint) {
     this.advect(gl, this.ink, dt);
     this.advect(gl, this.velocity.u, dt);
     this.advect(gl, this.velocity.v, dt);
-
     this.ink.flip();
     this.velocity.u.flip();
     this.velocity.v.flip();
+    if (splatPoint.down && splatPoint.moved) {
+      this.splat(gl, splatPoint);
+      this.ink.flip();
+      this.velocity.u.flip();
+      this.velocity.v.flip();
+    }
+    this.velocity.divergence(gl, this.positionBuffer, dt);
+    this.jacobi(gl);
+    this.velocity.applyPressureGradient(gl, this.positionBuffer, this.pressure, dt);
+  }
+
+  jacobi(gl) {
+    gl.useProgram(this.jacobiProgram.program);
+
+    // Vertex attributes
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+    gl.vertexAttribPointer(this.jacobiProgram.attributes.aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(this.jacobiProgram.attributes.aVertexPosition);
+
+    // Uniforms
+    gl.uniform2f(this.jacobiProgram.uniforms.size, ...this.pressure.size)
+
+    // Textures
+    gl.uniform1i(this.jacobiProgram.uniforms.divergence, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.velocity.div.src.texture);
+
+    for (let i = 0; i < this.jacobiIters; i++) {
+      // Write to dst pressure texture
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.pressure.dst.framebuffer);
+      gl.viewport(0, 0, ...this.pressure.size);
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      gl.clearDepth(1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+      // Read src pressure texture
+      gl.uniform1i(this.jacobiProgram.uniforms.pressure, 1);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, this.pressure.src.texture);
+
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      this.pressure.flip();
+    }
   }
 
   advect(gl, value, dt) {
@@ -71,6 +126,7 @@ export default class Fluid {
     gl.uniform2f(this.advectProgram.uniforms.velocitySize, ...this.velocity.size);
     gl.uniform2f(this.advectProgram.uniforms.valueSize, ...value.size);
     gl.uniform2f(this.advectProgram.uniforms.valueOffset, ...value.offset);
+    gl.uniform2f(this.advectProgram.uniforms.valueCorrection, ...value.correction)
     gl.uniform1f(this.advectProgram.uniforms.dt, dt);
 
     // Textures
@@ -140,10 +196,6 @@ export default class Fluid {
     gl.uniform1i(this.splatProgram.uniforms.texture, 0);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-    this.ink.flip();
-    this.velocity.u.flip();
-    this.velocity.v.flip();
   }
 
   drawScene(gl) {
@@ -159,10 +211,10 @@ export default class Fluid {
     gl.vertexAttribPointer(this.renderProgram.attributes.aVertexPosition, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(this.renderProgram.attributes.aVertexPosition);
 
-    // Ink texture
+    // Texture
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.ink.src.texture);
-    gl.uniform1i(this.renderProgram.uniforms.inkTexture, 0);
+    gl.uniform1i(this.renderProgram.uniforms.texture, 0);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   };

@@ -72,31 +72,36 @@ const FluidSim = () => {
 
     const gl = getWebGLContext(canvas);
     const simParams = {
+      jacobiIters: 20,
       inkParams: {
-        resolution: 32,
+        resolution: 256,
         splatRadius: 0.002,
+        internalFormat: gl.RGBA,
+        format: gl.RGBA,
+        type: gl.FLOAT,
+        filterType: gl.LINEAR,
+      },
+      velocityParams: {
+        resolution: 256,
+        splatRadius: 0.002,
+        splatForce: 20,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
         type: gl.FLOAT,
         filterType: gl.NEAREST,
       },
-      velocityParams: {
-        resolution: 128,
-        splatRadius: 0.002,
-        splatForce: 1000,
+      pressureParams: {
+        resolution: 256,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
         type: gl.FLOAT,
-        filterType: gl.LINEAR,
+        filterType: gl.NEAREST,
       }
     };
     const fluid = new Fluid(gl, simParams);
 
     const render = () => {
-      if (splatPoint.down && splatPoint.moved) {
-        fluid.splat(gl, splatPoint);
-      }
-      fluid.step(gl, 0.01);
+      fluid.step(gl, 0.01, splatPoint);
       fluid.drawScene(gl);
       requestAnimationFrame(render);
     }
