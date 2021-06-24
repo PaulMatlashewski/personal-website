@@ -74,7 +74,7 @@ const FluidSim = () => {
     const simParams = {
       jacobiIters: 20,
       inkParams: {
-        resolution: 256,
+        resolution: 512,
         splatRadius: 0.002,
         internalFormat: gl.RGBA,
         format: gl.RGBA,

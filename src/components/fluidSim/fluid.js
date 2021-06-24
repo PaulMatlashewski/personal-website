@@ -19,7 +19,7 @@ export default class Fluid {
 
     this.renderProgram = new ShaderProgram(gl, vertexSource, fragmentSource);
     this.splatProgram = new ShaderProgram(gl, vertexSource, splatSource);
-    this.advectProgram = new ShaderProgram(gl, vertexSource, linearAdvectSource);
+    this.advectProgram = new ShaderProgram(gl, vertexSource, cubicAdvectSource);
     this.jacobiProgram = new ShaderProgram(gl, vertexSource, jacobiSource);
 
     // Fluid values

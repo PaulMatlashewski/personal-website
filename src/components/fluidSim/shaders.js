@@ -169,9 +169,7 @@ export const cubicAdvectSource = /*glsl*/`
     vec4 u3 = texture2D(texture, p3 / size);
 
     vec4 v = ws[0] * u0 + ws[1] * u1 + ws[2] * u2 + ws[3] * u3;
-
-    // return clamp(v, min(min(u0, u1), min(u2, u3)), max(max(u0, u1), max(u2, u3)));
-    return v;
+    return clamp(v, min(min(u0, u1), min(u2, u3)), max(max(u0, u1), max(u2, u3)));
   }
 
   vec4 bicubic_interp(sampler2D texture, vec2 p, vec2 offset, vec2 size) {
@@ -221,9 +219,7 @@ export const cubicAdvectSource = /*glsl*/`
 
     // Interpolate in x direction
     vec4 v = ws[0] * u0 + ws[1] * u1 + ws[2] * u2 + ws[3] * u3;
-
-    // return clamp(v, min(min(u0, u1), min(u2, u3)), max(max(u0, u1), max(u2, u3)));
-    return v;
+    return clamp(v, min(min(u0, u1), min(u2, u3)), max(max(u0, u1), max(u2, u3)));
   }
 
   vec2 euler(sampler2D uVelocity, sampler2D vVelocity, vec2 p, vec2 velocitySize, float dt) {
