@@ -5,6 +5,7 @@ import ShaderProgram from './shaderProgram'
 import {
   vertexSource,
   fragmentSource,
+  setValueSource,
   splatSource,
   linearAdvectSource,
   cubicAdvectSource,
@@ -18,29 +19,34 @@ export default class Fluid {
     this.positionBuffer = this.initPositionBuffer(gl);
 
     this.renderProgram = new ShaderProgram(gl, vertexSource, fragmentSource);
+    this.setValueProgram = new ShaderProgram(gl, vertexSource, setValueSource);
     this.splatProgram = new ShaderProgram(gl, vertexSource, splatSource);
-    this.advectProgram = new ShaderProgram(gl, vertexSource, cubicAdvectSource);
     this.jacobiProgram = new ShaderProgram(gl, vertexSource, jacobiSource);
+    if (simParams === 'linear') {
+      this.advectProgram = new ShaderProgram(gl, vertexSource, linearAdvectSource);
+    } else {
+      this.advectProgram = new ShaderProgram(gl, vertexSource, cubicAdvectSource);
+    }
 
     // Fluid values
     this.ink = new Ink(gl, simParams.inkParams);
     this.velocity = new Velocity(gl, simParams.velocityParams);
     this.pressure = new Pressure(gl, simParams.pressureParams);
 
-    // Initialize ink with zero values
-    this.ink.src.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 1]);
-    this.ink.dst.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 1]);
+    // Initialize ink with
+    this.setTextureValue(gl, this.ink.src, [0, 0, 0, 1]);
+    this.setTextureValue(gl, this.ink.dst, [0, 0, 0, 1]);
 
     // Initialize velocity
-    this.velocity.u.src.setTextureValue(gl, this.positionBuffer, [0.0, 0, 0, 1]);
-    this.velocity.u.dst.setTextureValue(gl, this.positionBuffer, [0.0, 0, 0, 1]);
-    this.velocity.v.src.setTextureValue(gl, this.positionBuffer, [0.0, 0, 0, 1]);
-    this.velocity.v.dst.setTextureValue(gl, this.positionBuffer, [0.0, 0, 0, 1]);
-    this.velocity.div.src.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 1]);
+    this.setTextureValue(gl, this.velocity.u.src, [0, 0, 0, 1]);
+    this.setTextureValue(gl, this.velocity.u.dst, [0, 0, 0, 1]);
+    this.setTextureValue(gl, this.velocity.v.src, [0, 0, 0, 1]);
+    this.setTextureValue(gl, this.velocity.v.dst, [0, 0, 0, 1]);
+    this.setTextureValue(gl, this.velocity.div.src, [0, 0, 0, 1]);
 
     // Initialize pressure
-    this.pressure.src.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 1]);
-    this.pressure.dst.setTextureValue(gl, this.positionBuffer, [0, 0, 0, 1]);
+    this.setTextureValue(gl, this.pressure.src, [0, 0, 0, 1]);
+    this.setTextureValue(gl, this.pressure.dst, [0, 0, 0, 1]);
   }
 
   initPositionBuffer(gl) {
@@ -54,6 +60,25 @@ export default class Fluid {
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
     return positionBuffer;
+  }
+
+  setTextureValue(gl, fluidValue, value) {
+    gl.useProgram(this.setValueProgram.program);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fluidValue.framebuffer);
+    gl.viewport(0, 0, fluidValue.width, fluidValue.height);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearDepth(1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    // Vertex positions
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+    gl.vertexAttribPointer(this.setValueProgram.attributes.aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(this.setValueProgram.attributes.aVertexPosition);
+
+    // Texture value
+    gl.uniform4f(this.setValueProgram.uniforms.value, ...value)
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
   step(gl, dt, splatPoint) {

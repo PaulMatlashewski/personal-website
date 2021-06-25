@@ -73,6 +73,7 @@ const FluidSim = () => {
     const gl = getWebGLContext(canvas);
     const simParams = {
       jacobiIters: 20,
+      interpolation: 'cubic',
       inkParams: {
         resolution: 512,
         splatRadius: 0.002,

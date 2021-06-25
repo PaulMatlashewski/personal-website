@@ -1,14 +1,9 @@
-import ShaderProgram from './shaderProgram'
-import { vertexSource, setValueSource } from './shaders'
-
 class FluidValue {
   constructor(gl, params, size) {
     this.width = size[0]
     this.height = size[1]
     this.texture = this.initTexture(gl, params);
     this.framebuffer = this.initFramebuffer(gl)
-
-    this.setValueProgram = new ShaderProgram(gl, vertexSource, setValueSource);
   }
 
   initTexture(gl, params) {
@@ -27,25 +22,6 @@ class FluidValue {
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture, 0);
     return framebuffer;
-  }
-
-  setTextureValue(gl, positionBuffer, value) {
-    gl.useProgram(this.setValueProgram.program);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-    gl.viewport(0, 0, this.width, this.height);
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clearDepth(1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    // Vertex positions
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.vertexAttribPointer(this.setValueProgram.attributes.aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(this.setValueProgram.attributes.aVertexPosition);
-
-    // Texture value
-    gl.uniform4f(this.setValueProgram.uniforms.value, ...value)
-
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 }
 
