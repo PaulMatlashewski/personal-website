@@ -18,7 +18,7 @@ export const fragmentSource = /*glsl*/`
   uniform sampler2D texture;
 
   void main() {
-    gl_FragColor = texture2D(texture, vUv);
+    gl_FragColor = vec4(texture2D(texture, vUv).xyz, 1);
   }
 `;
 
@@ -39,16 +39,6 @@ export const splatSource =  /*glsl*/`
     vec3 splatValue = exp(-dot(p, p) / radius) * value;
     vec3 baseValue = texture2D(texture, vUv).xyz;
     gl_FragColor = vec4(splatValue + baseValue, 1.0);
-  }
-`;
-
-export const setValueSource = /*glsl*/`
-  precision highp float;
-
-  uniform vec4 value;
-
-  void main() {
-    gl_FragColor = value;
   }
 `;
 
