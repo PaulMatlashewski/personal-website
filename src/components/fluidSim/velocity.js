@@ -4,6 +4,7 @@ import { vertexSource, divergenceSource, uGradSource, vGradSource } from './shad
 
 export default class Velocity {
   constructor(gl, params) {
+    this.params = params;
     this.resolution = params.resolution;
     this.splatRadius = params.splatRadius;
     this.splatForce = params.splatForce;
@@ -24,69 +25,46 @@ export default class Velocity {
     let width;
     let height;
     if (gl.drawingBufferWidth > gl.drawingBufferHeight) {
-      width = Math.round(this.resolution * aspectRatio);
-      height = Math.round(this.resolution);
+      width = Math.round(this.params.resolution * aspectRatio);
+      height = Math.round(this.params.resolution);
     } else {
-      width = Math.round(this.resolution);
-      height = Math.round(this.resolution / aspectRatio);
+      width = Math.round(this.params.resolution);
+      height = Math.round(this.params.resolution / aspectRatio);
     }
     return [width, height];
   }
 
+  applyPressureGradientComponent(gl, component, program, positionBuffer, pressure, dt) {
+    gl.useProgram(program.program);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, component.dst.framebuffer);
+    gl.viewport(0, 0, ...component.size);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearDepth(1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    // Vertex attributes
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.vertexAttribPointer(program.attributes.aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(program.attributes.aVertexPosition);
+
+    // Uniforms
+    gl.uniform1f(program.uniforms.scale, dt * this.params.resolution);
+    gl.uniform2f(program.uniforms.size, ...component.size);
+
+    // Textures
+    gl.uniform1i(program.uniforms.pressure, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, pressure.src.texture);
+    gl.uniform1i(program.uniforms.velocity, 1);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, component.src.texture);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+
   applyPressureGradient(gl, positionBuffer, pressure, dt) {
-    // Correct u velocity with pressure gradient
-    gl.useProgram(this.uGradientProgram.program);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.u.dst.framebuffer);
-    gl.viewport(0, 0, ...this.u.size);
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clearDepth(1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    // Vertex attributes
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.vertexAttribPointer(this.uGradientProgram.attributes.aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(this.uGradientProgram.attributes.aVertexPosition);
-
-    // Uniforms
-    gl.uniform1f(this.uGradientProgram.uniforms.scale, dt * this.resolution);
-    gl.uniform2f(this.uGradientProgram.uniforms.size, ...this.u.size);
-
-    // Textures
-    gl.uniform1i(this.uGradientProgram.uniforms.pressure, 0);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, pressure.src.texture);
-    gl.uniform1i(this.uGradientProgram.uniforms.uVelocity, 1);
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, this.u.src.texture);
-
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-    // Correct v velocity values with pressure gradient
-    gl.useProgram(this.vGradientProgram.program);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.v.dst.framebuffer);
-    gl.viewport(0, 0, ...this.v.size);
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clearDepth(1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    // Vertex attributes
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.vertexAttribPointer(this.vGradientProgram.attributes.aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(this.vGradientProgram.attributes.aVertexPosition);
-
-    // Uniforms
-    gl.uniform1f(this.vGradientProgram.uniforms.scale, dt * this.resolution);
-    gl.uniform2f(this.vGradientProgram.uniforms.size, ...this.v.size);
-
-    // Textures
-    gl.uniform1i(this.vGradientProgram.uniforms.pressure, 0);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, pressure.src.texture);
-    gl.uniform1i(this.vGradientProgram.uniforms.vVelocity, 1);
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, this.v.src.texture);
-
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    this.applyPressureGradientComponent(gl, this.u, this.uGradientProgram, positionBuffer, pressure, dt);
+    this.applyPressureGradientComponent(gl, this.v, this.vGradientProgram, positionBuffer, pressure, dt);
     this.u.flip();
     this.v.flip();
   }

@@ -295,7 +295,7 @@ export const uGradSource = /*glsl*/`
   uniform float scale;
   uniform vec2 size;
   uniform sampler2D pressure;
-  uniform sampler2D uVelocity;
+  uniform sampler2D velocity;
 
   void main() {
     vec2 gid = floor(vUv * size);
@@ -304,7 +304,7 @@ export const uGradSource = /*glsl*/`
       vec2 p = floor(vUv * size) + vec2(0.5, 0.5);
       vec2 dx = vec2(1.0, 0.0);
       vec2 pSize = size - dx; // Staggered grid correction
-      float u = texture2D(uVelocity, vUv).x;
+      float u = texture2D(velocity, vUv).x;
       float P1 = texture2D(pressure, (p - dx) / pSize).x;
       float P2 = texture2D(pressure, p / pSize).x;
       gl_FragColor = vec4(u - scale * (P2 - P1), 0, 0, 1);
@@ -324,7 +324,7 @@ export const vGradSource = /*glsl*/`
   uniform float scale;
   uniform vec2 size;
   uniform sampler2D pressure;
-  uniform sampler2D vVelocity;
+  uniform sampler2D velocity;
 
   void main() {
     vec2 gid = floor(vUv * size);
@@ -333,7 +333,7 @@ export const vGradSource = /*glsl*/`
       vec2 p = floor(vUv * size) + vec2(0.5, 0.5);
       vec2 dy = vec2(0.0, 1.0);
       vec2 pSize = size - dy; // Staggered grid correction
-      float v = texture2D(vVelocity, vUv).x;
+      float v = texture2D(velocity, vUv).x;
       float P1 = texture2D(pressure, (p - dy) / pSize).x;
       float P2 = texture2D(pressure, p / pSize).x;
       gl_FragColor = vec4(v - scale * (P2 - P1), 0, 0, 1);
