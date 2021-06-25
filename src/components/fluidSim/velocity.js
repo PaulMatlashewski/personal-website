@@ -1,13 +1,11 @@
 import { SingleFluidValue, DoubleFluidValue } from './fluidValue'
+import BoundaryCondition from './boundaryCondition'
 import ShaderProgram from './shaderProgram'
 import { vertexSource, divergenceSource, uGradSource, vGradSource } from './shaders'
 
 export default class Velocity {
   constructor(gl, params) {
     this.params = params;
-    this.resolution = params.resolution;
-    this.splatRadius = params.splatRadius;
-    this.splatForce = params.splatForce;
     this.size = this.getSize(gl);
 
     this.divergenceProgram = new ShaderProgram(gl, vertexSource, divergenceSource);
@@ -18,6 +16,10 @@ export default class Velocity {
     this.u = new DoubleFluidValue(gl, params, { x: 1, y: 0 }, [0.0, 0.5], [0.5, 0.0]);
     this.v = new DoubleFluidValue(gl, params, { x: 0, y: 1 }, [0.5, 0.0], [0.0, 0.5]);
     this.div = new SingleFluidValue(gl, params, { x: 0, y: 0 }, [0.5, 0.5], [0.0, 0.0]);
+
+    // Boundary condition textures
+    this.u.bc = new BoundaryCondition(gl, params, [this.size[0] + 1, this.size[1]], params.uBcs);
+    this.v.bc = new BoundaryCondition(gl, params, [this.size[0], this.size[1] + 1], params.vBcs);
   }
 
   getSize(gl) {
@@ -83,7 +85,7 @@ export default class Velocity {
     gl.enableVertexAttribArray(this.divergenceProgram.attributes.aVertexPosition);
 
     // Uniforms
-    gl.uniform1f(this.divergenceProgram.uniforms.scale, 1 / (dt * this.resolution));
+    gl.uniform1f(this.divergenceProgram.uniforms.scale, 1 / (dt * this.params.resolution));
     gl.uniform2f(this.divergenceProgram.uniforms.size, ...this.div.size);
 
     // Textures

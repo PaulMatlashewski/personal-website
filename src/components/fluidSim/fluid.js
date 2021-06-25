@@ -9,22 +9,25 @@ import {
   linearAdvectSource,
   cubicAdvectSource,
   jacobiSource,
+  boundaryConditionSource
 } from './shaders'
 
 export default class Fluid {
   constructor(gl, simParams) {
     this.jacobiIters = simParams.jacobiIters;
 
-    this.positionBuffer = this.initPositionBuffer(gl);
-
+    // Shader programs
     this.renderProgram = new ShaderProgram(gl, vertexSource, fragmentSource);
+    this.boundaryConditionProgram = new ShaderProgram(gl, vertexSource, boundaryConditionSource);
     this.splatProgram = new ShaderProgram(gl, vertexSource, splatSource);
     this.jacobiProgram = new ShaderProgram(gl, vertexSource, jacobiSource);
-    if (simParams === 'linear') {
+    if (simParams.interpolation === 'linear') {
       this.advectProgram = new ShaderProgram(gl, vertexSource, linearAdvectSource);
     } else {
       this.advectProgram = new ShaderProgram(gl, vertexSource, cubicAdvectSource);
     }
+    // Vertex shader position buffer
+    this.positionBuffer = this.initPositionBuffer(gl);
 
     // Fluid values
     this.ink = new Ink(gl, simParams.inkParams);
@@ -45,22 +48,59 @@ export default class Fluid {
     return positionBuffer;
   }
 
+  applyBoundaryConditions(gl, value) {
+    gl.useProgram(this.boundaryConditionProgram.program);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, value.dst.framebuffer);
+    gl.viewport(0, 0, ...value.size);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearDepth(1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    // Vertex attributes
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+    gl.vertexAttribPointer(this.boundaryConditionProgram.attributes.aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(this.boundaryConditionProgram.attributes.aVertexPosition);
+
+    // Textures
+    gl.uniform1i(this.boundaryConditionProgram.uniforms.bc, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, value.bc.texture);
+    gl.uniform1i(this.boundaryConditionProgram.uniforms.texture, 1);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, value.src.texture);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+
   step(gl, dt, splatPoint) {
+    // Advection step
     this.advect(gl, this.ink, dt);
     this.advect(gl, this.velocity.u, dt);
     this.advect(gl, this.velocity.v, dt);
     this.ink.flip();
     this.velocity.u.flip();
     this.velocity.v.flip();
+
+    // Apply forces
     if (splatPoint.down && splatPoint.moved) {
       this.splat(gl, splatPoint);
       this.ink.flip();
       this.velocity.u.flip();
       this.velocity.v.flip();
     }
+
+    // Projection step
     this.velocity.divergence(gl, this.positionBuffer, dt);
     this.jacobi(gl);
     this.velocity.applyPressureGradient(gl, this.positionBuffer, this.pressure, dt);
+
+    // Boundary conditions
+    this.applyBoundaryConditions(gl, this.ink);
+    this.applyBoundaryConditions(gl, this.velocity.u);
+    this.applyBoundaryConditions(gl, this.velocity.v);
+    this.ink.flip();
+    this.velocity.u.flip();
+    this.velocity.v.flip();
   }
 
   jacobi(gl) {
@@ -148,7 +188,7 @@ export default class Fluid {
     let c = this.ink.generateColor();
     gl.uniform2f(this.splatProgram.uniforms.point, splatPoint.x, splatPoint.y);
     gl.uniform3f(this.splatProgram.uniforms.value, c.r, c.g, c.b);
-    gl.uniform1f(this.splatProgram.uniforms.radius, this.ink.splatRadius);
+    gl.uniform1f(this.splatProgram.uniforms.radius, this.ink.params.splatRadius);
     gl.uniform1f(this.splatProgram.uniforms.aspect, gl.canvas.clientWidth / gl.canvas.clientHeight);
 
     // Textures
@@ -165,7 +205,8 @@ export default class Fluid {
     gl.clearDepth(1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    gl.uniform3f(this.splatProgram.uniforms.value, splatPoint.dx * this.velocity.splatForce, 0, 0);
+    gl.uniform3f(this.splatProgram.uniforms.value, splatPoint.dx * this.velocity.params.splatForce, 0, 0);
+    gl.uniform1f(this.splatProgram.uniforms.radius, this.velocity.params.splatRadius);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.velocity.u.src.texture);
     gl.uniform1i(this.splatProgram.uniforms.texture, 0);
@@ -179,7 +220,8 @@ export default class Fluid {
     gl.clearDepth(1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    gl.uniform3f(this.splatProgram.uniforms.value, splatPoint.dy * this.velocity.splatForce, 0, 0);
+    gl.uniform3f(this.splatProgram.uniforms.value, splatPoint.dy * this.velocity.params.splatForce, 0, 0);
+    gl.uniform1f(this.splatProgram.uniforms.radius, this.velocity.params.splatRadius);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.velocity.v.src.texture);
     gl.uniform1i(this.splatProgram.uniforms.texture, 0);

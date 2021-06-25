@@ -18,7 +18,7 @@ export const fragmentSource = /*glsl*/`
   uniform sampler2D texture;
 
   void main() {
-    gl_FragColor = vec4(texture2D(texture, vUv).xyz, 1);
+    gl_FragColor = vec4(texture2D(texture, vUv).xyz, 1.0);
   }
 `;
 
@@ -340,6 +340,28 @@ export const vGradSource = /*glsl*/`
     } else {
       // Apply boundary conditions to edge velocity values
       gl_FragColor = vec4(0, 0, 0, 1); // Dirichlet BC
+    }
+  }
+`;
+
+export const boundaryConditionSource = /*glsl*/`
+  precision highp float;
+  precision highp sampler2D;
+
+  varying vec2 vUv;
+
+  uniform sampler2D bc;
+  uniform sampler2D texture;
+  
+  void main() {
+    vec4 bc_value = texture2D(bc, vUv);
+    vec4 tex_value = texture2D(texture, vUv);
+    // The alpha value of the bc indicates
+    // whether or not it is active
+    if (bc_value.a > 0.5) {
+      gl_FragColor = vec4(bc_value.xyz, tex_value.a);
+    } else {
+      gl_FragColor = tex_value;
     }
   }
 `;

@@ -1,9 +1,11 @@
 import { DoubleFluidValue } from './fluidValue'
+import BoundaryCondition from './boundaryCondition'
 
 export default class Ink extends DoubleFluidValue {
   constructor(gl, params) {
     super(gl, params, { x: 0, y: 0 }, [0.5, 0.5], [0.0, 0.0]);
-    this.splatRadius = params.splatRadius;
+    this.params = params;
+    this.bc = new BoundaryCondition(gl, params, this.size, params.bcs);
   }
 
   generateColor() {
