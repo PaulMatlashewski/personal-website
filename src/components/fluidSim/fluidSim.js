@@ -59,8 +59,8 @@ const FluidSim = () => {
     canvas.addEventListener('mousemove', e => {
       const x = e.offsetX / canvas.width;
       const y = 1 - e.offsetY / canvas.height;
-      splatPoint.dx = deltaX(splatPoint.x, x);
-      splatPoint.dy = deltaY(splatPoint.y, y);
+      splatPoint.dx = x - splatPoint.x;
+      splatPoint.dy = y - splatPoint.y;
       splatPoint.x = x;
       splatPoint.y = y;
       splatPoint.moved = (Math.abs(splatPoint.dx) > 0) || (Math.abs(splatPoint.dy) > 0)
@@ -70,26 +70,12 @@ const FluidSim = () => {
       splatPoint.down = false;
     });
 
-    function deltaX(x0, x1) {
-      let delta = x1 - x0;
-      let aspectRatio = canvas.width / canvas.height;
-      if (aspectRatio < 1) delta *= aspectRatio;
-      return delta;
-  }
-  
-    function deltaY(y0, y1) {
-      let delta = y1 - y0;
-      let aspectRatio = canvas.width / canvas.height;
-      if (aspectRatio > 1) delta /= aspectRatio;
-      return delta;
-    }
-
     const gl = getWebGLContext(canvas);
     const simParams = {
-      jacobiIters: 20,
-      interpolation: 'cubic',
+      jacobiIters: 40,
+      interpolation: 'linear',
       inkParams: {
-        resolution: 1024,
+        resolution: 512,
         splatRadius: 0.002,
         internalFormat: gl.RGBA,
         format: gl.RGBA,

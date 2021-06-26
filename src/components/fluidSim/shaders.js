@@ -89,8 +89,8 @@ export const linearAdvectSource = /*glsl*/`
   }
 
   vec2 euler(sampler2D uVelocity, sampler2D vVelocity, vec2 p, vec2 velocitySize, float dt) {
-    vec4 u = bilinear_interp(uVelocity, p, vec2(0.0, 0.5), velocitySize);
-    vec4 v = bilinear_interp(vVelocity, p, vec2(0.5, 0.0), velocitySize);
+    vec4 u = bilinear_interp(uVelocity, p, vec2(0.0, 0.0), velocitySize);
+    vec4 v = bilinear_interp(vVelocity, p, vec2(0.0, 0.0), velocitySize);
     return p + vec2(u.x, v.x) * dt;
   }
 
@@ -213,8 +213,8 @@ export const cubicAdvectSource = /*glsl*/`
   }
 
   vec2 euler(sampler2D uVelocity, sampler2D vVelocity, vec2 p, vec2 velocitySize, float dt) {
-    vec4 u = bilinear_interp(uVelocity, p, vec2(0.0, 0.5), velocitySize);
-    vec4 v = bilinear_interp(vVelocity, p, vec2(0.5, 0.0), velocitySize);
+    vec4 u = bilinear_interp(uVelocity, p, vec2(0.0, 0.0), velocitySize);
+    vec4 v = bilinear_interp(vVelocity, p, vec2(0.0, 0.0), velocitySize);
     return p + vec2(u.x, v.x) * dt;
   }
 
