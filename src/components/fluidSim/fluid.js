@@ -9,7 +9,8 @@ import {
   linearAdvectSource,
   cubicAdvectSource,
   jacobiSource,
-  boundaryConditionSource
+  boundaryConditionSource,
+  upwindSource,
 } from './shaders'
 
 export default class Fluid {
@@ -21,6 +22,7 @@ export default class Fluid {
     this.boundaryConditionProgram = new ShaderProgram(gl, vertexSource, boundaryConditionSource);
     this.splatProgram = new ShaderProgram(gl, vertexSource, splatSource);
     this.jacobiProgram = new ShaderProgram(gl, vertexSource, jacobiSource);
+    this.upwindProgram = new ShaderProgram(gl, vertexSource, upwindSource);
     if (simParams.interpolation === 'linear') {
       this.advectProgram = new ShaderProgram(gl, vertexSource, linearAdvectSource);
     } else {
@@ -165,6 +167,37 @@ export default class Fluid {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.velocity.v.src.texture);
     gl.uniform1i(this.advectProgram.uniforms.value, 2);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, value.src.texture);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+
+  upwind(gl, value, dt) {
+    gl.useProgram(this.upwindProgram.program);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, value.dst.framebuffer);
+    gl.viewport(0, 0, ...value.size);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearDepth(1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    // Vertex positions
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+    gl.vertexAttribPointer(this.upwindProgram.attributes.aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(this.upwindProgram.attributes.aVertexPosition);
+
+    // Uniforms
+    gl.uniform2f(this.upwindProgram.uniforms.size, ...value.size);
+    gl.uniform1f(this.upwindProgram.uniforms.dt, dt);
+
+    // Textures
+    gl.uniform1i(this.upwindProgram.uniforms.uVelocity, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.velocity.u.src.texture);
+    gl.uniform1i(this.upwindProgram.uniforms.vVelocity, 1);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.velocity.v.src.texture);
+    gl.uniform1i(this.upwindProgram.uniforms.value, 2);
     gl.activeTexture(gl.TEXTURE2);
     gl.bindTexture(gl.TEXTURE_2D, value.src.texture);
 

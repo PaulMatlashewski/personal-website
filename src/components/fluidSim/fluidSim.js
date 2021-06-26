@@ -72,10 +72,10 @@ const FluidSim = () => {
 
     const gl = getWebGLContext(canvas);
     const simParams = {
-      jacobiIters: 40,
+      jacobiIters: 20,
       interpolation: 'linear',
       inkParams: {
-        resolution: 512,
+        resolution: 256,
         splatRadius: 0.002,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
@@ -84,7 +84,7 @@ const FluidSim = () => {
         bcs: [],
       },
       velocityParams: {
-        resolution: 128,
+        resolution: 256,
         splatRadius: 0.002,
         splatForce: 20,
         internalFormat: gl.RGBA,
@@ -101,7 +101,7 @@ const FluidSim = () => {
         ],
       },
       pressureParams: {
-        resolution: 128,
+        resolution: 256,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
         type: gl.FLOAT,

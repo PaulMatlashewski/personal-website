@@ -127,16 +127,6 @@ export const cubicAdvectSource = /*glsl*/`
     vec2 p3 = vec2(0.0, 1.0) + p1;
     vec2 p4 = vec2(1.0, 1.0) + p1;
 
-    // Clamp interpolation points to grid
-    float x_min = 0.0;
-    float y_min = 0.0;
-    float x_max = size.x - 1.0;
-    float y_max = size.y - 1.0;
-    p1 = vec2(max(min(p1.x, x_max), x_min), max(min(p1.y, y_max), y_min));
-    p2 = vec2(max(min(p2.x, x_max), x_min), max(min(p2.y, y_max), y_min));
-    p3 = vec2(max(min(p3.x, x_max), x_min), max(min(p3.y, y_max), y_min));
-    p4 = vec2(max(min(p4.x, x_max), x_min), max(min(p4.y, y_max), y_min));
-
     // Sample texture at grid values
     vec4 a = texture2D(texture, p1 / size);
     vec4 b = texture2D(texture, p2 / size);
@@ -226,6 +216,97 @@ export const cubicAdvectSource = /*glsl*/`
   }
 `;
 
+// This currently requires the advected quantity grid to have the
+// same resolution as the velocity grid
+export const upwindSource = /*glsl*/`
+  precision highp float;
+  precision highp sampler2D;
+
+  varying vec2 vUv;
+
+  uniform vec2 size;
+  uniform float dt;
+  uniform sampler2D uVelocity;
+  uniform sampler2D vVelocity;
+  uniform sampler2D value;
+
+  vec2 uv_to_texel(vec2 vUv, vec2 size) {
+    return floor(vUv * size);
+  }
+
+  vec2 texel_to_uv(vec2 gid, vec2 size) {
+    return (gid + vec2(0.5, 0.5)) / size;
+  }
+
+  vec3 smoothness(float u, vec3 q0, vec3 q1, vec3 q2, vec3 q3) {
+    vec3 dq = q2 - q1;
+    return u > 0.0 ? (q1 - q0) / dq : (q3 - q2) / dq;
+  }
+
+  // Superbee flux limiter
+  vec3 superbee(float u, vec3 q0, vec3 q1, vec3 q2, vec3 q3) {
+    vec3 theta = smoothness(u, q0, q1, q2, q3);
+    vec3 a = max(min(vec3(1, 1, 1), 2.0 * theta), min(vec3(2, 2, 2), theta));
+    return max(vec3(0, 0, 0), a);
+  }
+
+  void main() {
+    vec2 gid = uv_to_texel(vUv, size);
+    float h = 1.0 / min(size.x, size.y);
+    vec3 q = texture2D(value, vUv).xyz;
+    vec3 q0, q1, q2, q3, limited_jump, limited_flux, upwind_flux;
+    vec2 u_size;
+    float alpha, u;
+
+    // Flux in x direction
+    vec2 dx = vec2(1.0, 0.0);
+    u_size = size + vec2(1.0, 0.0);
+    q0 = texture2D(value, texel_to_uv(gid - 2.0 * dx, size)).xyz;
+    q1 = texture2D(value, texel_to_uv(gid - dx, size)).xyz;
+    q2 = texture2D(value, texel_to_uv(gid + dx, size)).xyz;
+    q3 = texture2D(value, texel_to_uv(gid + 2.0 * dx, size)).xyz;
+    // Left interface
+    u = texture2D(uVelocity, texel_to_uv(gid, u_size)).x;
+    alpha = abs(u * dt / h); // Courant number
+    limited_jump = (q - q1) * superbee(u, q0, q1, q, q2);
+    limited_flux = 0.5 * abs(u) * (1.0 - alpha) * limited_jump;
+    upwind_flux = u > 0.0 ? q1 * u : q * u;
+    vec3 Fx0 = upwind_flux + limited_flux;
+    // Right interface
+    u = texture2D(uVelocity, texel_to_uv(gid + dx, u_size)).x;
+    alpha = abs(u * dt / h); // Courant number
+    limited_jump = (q2 - q) * superbee(u, q1, q, q2, q3);
+    limited_flux = 0.5 * abs(u) * (1.0 - alpha) * limited_jump;
+    upwind_flux = u > 0.0 ? q * u : q2 * u;
+    vec3 Fx1 = upwind_flux + limited_flux;
+
+    // Flux in y direction
+    vec2 dy = vec2(0.0, 1.0);
+    u_size = size + vec2(0.0, 1.0);
+    q0 = texture2D(value, texel_to_uv(gid - 2.0 * dy, size)).xyz;
+    q1 = texture2D(value, texel_to_uv(gid - dy, size)).xyz;
+    q2 = texture2D(value, texel_to_uv(gid + dy, size)).xyz;
+    q3 = texture2D(value, texel_to_uv(gid + 2.0 * dy, size)).xyz;
+    // Bottom interface
+    u = texture2D(vVelocity, texel_to_uv(gid, u_size)).x;
+    alpha = abs(u * dt / h); // Courant number
+    limited_jump = (q - q1) * superbee(u, q0, q1, q, q2);
+    limited_flux = 0.5 * abs(u) * (1.0 - alpha) * limited_jump;
+    upwind_flux = u > 0.0 ? q1 * u : q * u;
+    vec3 Fy0 = upwind_flux + limited_flux;
+    // Right interface
+    u = texture2D(vVelocity, texel_to_uv(gid + dy, u_size)).x;
+    alpha = abs(u * dt / h); // Courant number
+    limited_jump = (q2 - q) * superbee(u, q1, q, q2, q3);
+    limited_flux = 0.5 * abs(u) * (1.0 - alpha) * limited_jump;
+    upwind_flux = u > 0.0 ? q * u : q2 * u;
+    vec3 Fy1 = upwind_flux + limited_flux;
+
+    // Average flux in cell (requires CFL condition dt < dx / u)
+    gl_FragColor = vec4(q + (Fx0 - Fx1 + Fy0 - Fy1) * dt / h, 1.0);
+  }
+`;
+
 export const divergenceSource = /*glsl*/`
   precision highp float;
   precision highp sampler2D;
@@ -297,16 +378,24 @@ export const uGradSource = /*glsl*/`
   uniform sampler2D pressure;
   uniform sampler2D velocity;
 
+  vec2 uv_to_texel(vec2 vUv, vec2 size) {
+    return floor(vUv * size);
+  }
+
+  vec2 texel_to_uv(vec2 gid, vec2 size) {
+    return (gid + vec2(0.5, 0.5)) / size;
+  }
+
   void main() {
-    vec2 gid = floor(vUv * size);
+    vec2 gid = uv_to_texel(vUv, size);
+
     if ((gid.x > 0.0) && (gid.x < size.x - 1.0)) {
       // Correct the interior velocity values
-      vec2 p = floor(vUv * size) + vec2(0.5, 0.5);
       vec2 dx = vec2(1.0, 0.0);
-      vec2 pSize = size - dx; // Staggered grid correction
+      vec2 p_size = size - dx; // Staggered grid correction
       float u = texture2D(velocity, vUv).x;
-      float P1 = texture2D(pressure, (p - dx) / pSize).x;
-      float P2 = texture2D(pressure, p / pSize).x;
+      float P1 = texture2D(pressure, texel_to_uv(gid - dx, p_size)).x;
+      float P2 = texture2D(pressure, texel_to_uv(gid, p_size)).x;
       gl_FragColor = vec4(u - scale * (P2 - P1), 0, 0, 1);
     } else {
       // Apply boundary conditions to edge velocity values
@@ -326,16 +415,24 @@ export const vGradSource = /*glsl*/`
   uniform sampler2D pressure;
   uniform sampler2D velocity;
 
+  vec2 uv_to_texel(vec2 vUv, vec2 size) {
+    return floor(vUv * size);
+  }
+
+  vec2 texel_to_uv(vec2 gid, vec2 size) {
+    return (gid + vec2(0.5, 0.5)) / size;
+  }
+
   void main() {
-    vec2 gid = floor(vUv * size);
+    vec2 gid = uv_to_texel(vUv, size);
+
     if ((gid.y > 0.0) && (gid.y < size.y - 1.0)) {
       // Correct the interior velocity values
-      vec2 p = floor(vUv * size) + vec2(0.5, 0.5);
       vec2 dy = vec2(0.0, 1.0);
-      vec2 pSize = size - dy; // Staggered grid correction
+      vec2 p_size = size - dy; // Staggered grid correction
       float v = texture2D(velocity, vUv).x;
-      float P1 = texture2D(pressure, (p - dy) / pSize).x;
-      float P2 = texture2D(pressure, p / pSize).x;
+      float P1 = texture2D(pressure, texel_to_uv(gid - dy, p_size)).x;
+      float P2 = texture2D(pressure, texel_to_uv(gid, p_size)).x;
       gl_FragColor = vec4(v - scale * (P2 - P1), 0, 0, 1);
     } else {
       // Apply boundary conditions to edge velocity values
