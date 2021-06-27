@@ -3,7 +3,7 @@ import Fluid from './fluid'
 import { fluidCanvas } from './fluidSim.module.css'
 
 const resizeCanvas = gl => {
-  const dpr = window.devicePixelRatio;
+  const dpr = window.devicePixelRatio || 1;
   const width = Math.floor(gl.canvas.clientWidth * dpr);
   const height = Math.floor(gl.canvas.clientHeight * dpr);
   if (gl.canvas.width !== width || gl.canvas.height !== height) {
@@ -68,8 +68,12 @@ const FluidSim = () => {
 
     const onMouseMove = e => {
       const point = getPoint(e);
-      splatPoint.dx = point.x - splatPoint.x;
-      splatPoint.dy = point.y - splatPoint.y;
+      const aspectRatio = gl.canvas.clientWidth / gl.canvas.clientHeight;
+      let dx = point.x - splatPoint.x;
+      let dy = point.y - splatPoint.y;
+      aspectRatio > 0 ? (dy /= aspectRatio) : (dx *= aspectRatio);
+      splatPoint.dx = dx;
+      splatPoint.dy = dy;
       splatPoint.x = point.x;
       splatPoint.y = point.y;
       splatPoint.moved = (Math.abs(splatPoint.dx) > 0) || (Math.abs(splatPoint.dy) > 0);
