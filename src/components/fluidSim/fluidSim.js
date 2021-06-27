@@ -1,5 +1,17 @@
 import * as React from 'react'
 import Fluid from './fluid'
+import { fluidCanvas } from './fluidSim.module.css'
+
+const resizeCanvas = gl => {
+  const width = gl.canvas.clientWidth;
+  const height = gl.canvas.clientHeight;
+  if (gl.canvas.width !== width || gl.canvas.height !== height) {
+     gl.canvas.width = width;
+     gl.canvas.height = height;
+     return true;
+  }
+  return false;
+}
 
 function getWebGLContext(canvas) {
   const webGLParams = {
@@ -18,25 +30,19 @@ function getWebGLContext(canvas) {
   // Enable floating point textures
   gl.getExtension('OES_texture_float');
   gl.getExtension('OES_texture_float_linear');
+  
+  resizeCanvas(gl);
   return gl;
 }
 
 const FluidSim = () => {
   const canvasRef = React.useRef();
 
-  const resizeCanvas = (canvas) => {
-    const pixelRatio = window.devicePixelRatio || 1;
-    const width = Math.floor(window.innerWidth * pixelRatio)
-    const height = Math.floor(window.innerHeight * pixelRatio)
-    if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        return true;
-    }
-    return false;
-  }
-
   React.useEffect(() => {
+    const canvas = canvasRef.current
+    const gl = getWebGLContext(canvas);
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+
     let splatPoint = {
       x: null,
       y: null,
@@ -46,9 +52,6 @@ const FluidSim = () => {
       down: false,
       moved: false,
     };
-
-    const canvas = canvasRef.current
-    resizeCanvas(canvas);
 
     canvas.addEventListener('mousedown', e => {
       splatPoint.x = e.offsetX / canvas.width;
@@ -69,8 +72,7 @@ const FluidSim = () => {
     canvas.addEventListener('mouseup', e => {
       splatPoint.down = false;
     });
-
-    const gl = getWebGLContext(canvas);
+    
     const simParams = {
       jacobiIters: 20,
       interpolation: 'linear',
@@ -111,6 +113,8 @@ const FluidSim = () => {
     const fluid = new Fluid(gl, simParams);
 
     const render = () => {
+      resizeCanvas(gl);
+      gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
       fluid.step(gl, 0.01, splatPoint);
       fluid.drawScene(gl);
       requestAnimationFrame(render);
@@ -120,7 +124,7 @@ const FluidSim = () => {
   }, [])
 
   return (
-    <canvas ref={canvasRef} />
+    <canvas ref={canvasRef} className={fluidCanvas}/>
   )
 }
 

@@ -3,9 +3,7 @@ import FluidSim from '../../components/fluidSim/fluidSim'
 
 const FluidPage = () => {
   return (
-    <div>
-      <FluidSim />
-    </div>
+    <FluidSim />
   )
 }
 
