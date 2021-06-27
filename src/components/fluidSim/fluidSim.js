@@ -3,11 +3,13 @@ import Fluid from './fluid'
 import { fluidCanvas } from './fluidSim.module.css'
 
 const resizeCanvas = gl => {
-  const width = gl.canvas.clientWidth;
-  const height = gl.canvas.clientHeight;
+  const dpr = window.devicePixelRatio;
+  const width = Math.floor(gl.canvas.clientWidth * dpr);
+  const height = Math.floor(gl.canvas.clientHeight * dpr);
   if (gl.canvas.width !== width || gl.canvas.height !== height) {
      gl.canvas.width = width;
      gl.canvas.height = height;
+     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
      return true;
   }
   return false;
@@ -41,9 +43,8 @@ const FluidSim = () => {
   React.useEffect(() => {
     const canvas = canvasRef.current
     const gl = getWebGLContext(canvas);
-    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
-    let splatPoint = {
+    const splatPoint = {
       x: null,
       y: null,
       dx: null,
@@ -53,25 +54,35 @@ const FluidSim = () => {
       moved: false,
     };
 
-    canvas.addEventListener('mousedown', e => {
-      splatPoint.x = e.offsetX / canvas.width;
-      splatPoint.y = 1 - e.offsetY / canvas.height;
+    const getPoint = e => ({
+      x: e.offsetX / gl.canvas.clientWidth,
+      y: 1 - e.offsetY / gl.canvas.clientHeight
+    });
+
+    const onMouseDown = e => {
+      const point = getPoint(e);
+      splatPoint.x = point.x;
+      splatPoint.y = point.y;
       splatPoint.down = true;
-    });
+    }
 
-    canvas.addEventListener('mousemove', e => {
-      const x = e.offsetX / canvas.width;
-      const y = 1 - e.offsetY / canvas.height;
-      splatPoint.dx = x - splatPoint.x;
-      splatPoint.dy = y - splatPoint.y;
-      splatPoint.x = x;
-      splatPoint.y = y;
-      splatPoint.moved = (Math.abs(splatPoint.dx) > 0) || (Math.abs(splatPoint.dy) > 0)
-    });
+    const onMouseMove = e => {
+      const point = getPoint(e);
+      splatPoint.dx = point.x - splatPoint.x;
+      splatPoint.dy = point.y - splatPoint.y;
+      splatPoint.x = point.x;
+      splatPoint.y = point.y;
+      splatPoint.moved = (Math.abs(splatPoint.dx) > 0) || (Math.abs(splatPoint.dy) > 0);
+    }
 
-    canvas.addEventListener('mouseup', e => {
+    const onMouseUp = e => {
       splatPoint.down = false;
-    });
+      splatPoint.moved = false;
+    }
+
+    canvas.addEventListener('mousedown', onMouseDown);
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseup', onMouseUp);
     
     const simParams = {
       jacobiIters: 20,
@@ -114,13 +125,18 @@ const FluidSim = () => {
 
     const render = () => {
       resizeCanvas(gl);
-      gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
       fluid.step(gl, 0.01, splatPoint);
       fluid.drawScene(gl);
       requestAnimationFrame(render);
     }
 
     requestAnimationFrame(render);
+
+    return () => {
+      canvas.removeEventListener('mousedown', onMouseDown);
+      canvas.removeEventListener('mousemove', onMouseMove);
+      canvas.removeEventListener('mouseup', onMouseUp);
+    }
   }, [])
 
   return (
