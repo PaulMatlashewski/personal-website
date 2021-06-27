@@ -117,7 +117,7 @@ const FluidSim = () => {
     }
 
     requestAnimationFrame(render);
-  })
+  }, [])
 
   return (
     <canvas ref={canvasRef} />
