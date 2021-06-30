@@ -100,18 +100,19 @@ export const cubicAdvectSource = /*glsl*/`
 
   varying vec2 vUv;
 
-  uniform vec2 velocitySize;
+  uniform vec2 scale;
+  uniform vec2 offset;
   uniform vec2 valueSize;
-  uniform vec2 valueOffset;
-  uniform vec2 valueCorrection;
+  uniform vec2 velocitySize;
   uniform float dt;
   uniform sampler2D uVelocity;
   uniform sampler2D vVelocity;
   uniform sampler2D value;
 
-  vec4 bilinear_interp(sampler2D texture, vec2 p, vec2 offset, vec2 size) {
-    // Convert point in uv coordinates to texel coordinates
-    vec2 p0 = p * size - offset;
+  vec4 bilinear_interp(vec2 p, sampler2D texture, vec2 scale, vec2 size, vec2 offset) {
+    // Convert point in uv coordinates to texel coordinates, and
+    // apply offset for staggered grid
+    vec2 p0 = p * scale - offset;
 
     // Interpolation grid values
     vec2 p1 = floor(p0) + vec2(0.5, 0.5);
@@ -144,9 +145,9 @@ export const cubicAdvectSource = /*glsl*/`
     return clamp(v, min(min(u0, u1), min(u2, u3)), max(max(u0, u1), max(u2, u3)));
   }
 
-  vec4 bicubic_interp(sampler2D texture, vec2 p, vec2 offset, vec2 size) {
+  vec4 bicubic_interp(vec2 p, sampler2D texture, vec2 scale, vec2 size, vec2 offset) {
     // Convert point in uv coordinates to texel coordinates
-    vec2 p0 = p * size - offset;
+    vec2 p0 = p * scale - offset;
     vec2 p1 = floor(p0) + vec2(0.5, 0.5);
 
     float x_min = 1.0;
@@ -156,7 +157,7 @@ export const cubicAdvectSource = /*glsl*/`
     if ((p1.x < x_min) || (p1.y < y_min) || (p0.x > x_max) || (p0.y > y_max)) {
       // Too close to the edge to get cubic interpolation points.
       // Default to bilinear interpolation.
-      return bilinear_interp(texture, p, offset, size);
+      return bilinear_interp(p, texture, scale, size, offset);
     }
 
     vec2 dx = vec2(1.0, 0.0);
@@ -194,17 +195,18 @@ export const cubicAdvectSource = /*glsl*/`
     return clamp(v, min(min(u0, u1), min(u2, u3)), max(max(u0, u1), max(u2, u3)));
   }
 
-  vec2 euler(sampler2D uVelocity, sampler2D vVelocity, vec2 p, vec2 velocitySize, float dt) {
-    vec4 u = bilinear_interp(uVelocity, p, vec2(0.0, 0.0), velocitySize);
-    vec4 v = bilinear_interp(vVelocity, p, vec2(0.0, 0.0), velocitySize);
-    return p + vec2(u.x, v.x) * dt;
+  vec2 euler(vec2 p, sampler2D u, sampler2D v, vec2 size, vec2 scale, float dt) {
+    vec4 dx = bilinear_interp(p, u, size, size + vec2(1, 0), vec2(0.0, 0.5));
+    vec4 dy = bilinear_interp(p, v, size, size + vec2(0, 1), vec2(0.5, 0.0));
+    return p + vec2(dx.x, dy.x) / scale * dt;
   }
 
   void main() {
     // Semi-Lagrangian advection
-    vec2 q = vUv - valueCorrection / valueSize;
-    vec2 p = euler(uVelocity, vVelocity, q, velocitySize, -dt);
-    gl_FragColor = bicubic_interp(value, p, valueOffset, valueSize);
+    vec2 shift = vec2(0.5, 0.5) - offset;
+    vec2 p = (vUv * valueSize - shift) / scale;
+    vec2 q = euler(p, uVelocity, vVelocity, velocitySize, scale, -dt);
+    gl_FragColor = bicubic_interp(q, value, scale, valueSize, offset);
   }
 `;
 

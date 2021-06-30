@@ -69,6 +69,12 @@ const FluidSim = () => {
       const point = getPoint(e);
       let dx = point.x - splatPoint.x;
       let dy = point.y - splatPoint.y;
+      const aspectRatio = gl.canvas.width / gl.canvas.height;
+      if (aspectRatio > 1) {
+        dy /= aspectRatio
+      } else {
+        dx *= aspectRatio
+      }
       splatPoint.dx = dx;
       splatPoint.dy = dy;
       splatPoint.x = point.x;
@@ -87,7 +93,7 @@ const FluidSim = () => {
     
     const simParams = {
       jacobiIters: 20,
-      interpolation: 'linear',
+      interpolation: 'cubic',
       inkParams: {
         resolution: 512,
         splatRadius: 0.002,
@@ -100,7 +106,7 @@ const FluidSim = () => {
       velocityParams: {
         resolution: 256,
         splatRadius: 0.002,
-        splatForce: 15000,
+        splatForce: 10000,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
         type: gl.FLOAT,
