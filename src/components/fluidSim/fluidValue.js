@@ -37,11 +37,10 @@ export class FluidValue {
 }
 
 export class SingleFluidValue {
-  constructor(gl, params, sizeOffset, texelOffset, texelCorrection) {
+  constructor(gl, params, sizeOffset, texelOffset) {
     this.resolution = params.resolution;
     this.size = this.getSize(gl, sizeOffset);
     this.offset = texelOffset;
-    this.correction = texelCorrection;
     this.src = new FluidValue(gl, params, this.size);
   }
 

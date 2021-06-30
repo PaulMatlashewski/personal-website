@@ -49,7 +49,6 @@ const FluidSim = () => {
       y: null,
       dx: null,
       dy: null,
-      t: null,
       down: false,
       moved: false,
     };
@@ -68,10 +67,8 @@ const FluidSim = () => {
 
     const onMouseMove = e => {
       const point = getPoint(e);
-      const aspectRatio = gl.canvas.clientWidth / gl.canvas.clientHeight;
       let dx = point.x - splatPoint.x;
       let dy = point.y - splatPoint.y;
-      aspectRatio > 0 ? (dy /= aspectRatio) : (dx *= aspectRatio);
       splatPoint.dx = dx;
       splatPoint.dy = dy;
       splatPoint.x = point.x;
@@ -92,7 +89,7 @@ const FluidSim = () => {
       jacobiIters: 20,
       interpolation: 'linear',
       inkParams: {
-        resolution: 256,
+        resolution: 512,
         splatRadius: 0.002,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
@@ -103,7 +100,7 @@ const FluidSim = () => {
       velocityParams: {
         resolution: 256,
         splatRadius: 0.002,
-        splatForce: 20,
+        splatForce: 15000,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
         type: gl.FLOAT,

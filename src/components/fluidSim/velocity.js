@@ -1,7 +1,12 @@
 import { SingleFluidValue, DoubleFluidValue } from './fluidValue'
 import BoundaryCondition from './boundaryCondition'
 import ShaderProgram from './shaderProgram'
-import { vertexSource, divergenceSource, uGradSource, vGradSource } from './shaders'
+import {
+  vertexSource,
+  divergenceSource,
+  uGradSource,
+  vGradSource
+} from './shaders'
 
 export default class Velocity {
   constructor(gl, params) {
@@ -13,9 +18,9 @@ export default class Velocity {
     this.vGradientProgram = new ShaderProgram(gl, vertexSource, vGradSource);
 
     // Velocity texture values
-    this.u = new DoubleFluidValue(gl, params, { x: 1, y: 0 }, [0.0, 0.5], [0.5, 0.0]);
-    this.v = new DoubleFluidValue(gl, params, { x: 0, y: 1 }, [0.5, 0.0], [0.0, 0.5]);
-    this.div = new SingleFluidValue(gl, params, { x: 0, y: 0 }, [0.5, 0.5], [0.0, 0.0]);
+    this.u = new DoubleFluidValue(gl, params, { x: 1, y: 0 }, [0.0, 0.5]);
+    this.v = new DoubleFluidValue(gl, params, { x: 0, y: 1 }, [0.5, 0.0]);
+    this.div = new SingleFluidValue(gl, params, { x: 0, y: 0 }, [0.5, 0.5]);
 
     // Boundary condition textures
     this.u.bc = new BoundaryCondition(gl, params, [this.size[0] + 1, this.size[1]], params.uBcs);
@@ -34,6 +39,40 @@ export default class Velocity {
       height = Math.round(this.params.resolution / aspectRatio);
     }
     return [width, height];
+  }
+
+  advect(gl, program, component, dt, positionBuffer) {
+    gl.useProgram(program.program);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, component.dst.framebuffer);
+    gl.viewport(0, 0, ...component.size);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearDepth(1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    // Vertex positions
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.vertexAttribPointer(program.attributes.aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(program.attributes.aVertexPosition);
+
+    // Uniforms
+    gl.uniform2f(program.uniforms.scale, ...this.size);
+    gl.uniform2f(program.uniforms.offset, ...component.offset);
+    gl.uniform2f(program.uniforms.valueSize, ...component.size);
+    gl.uniform2f(program.uniforms.velocitySize, ...this.size);
+    gl.uniform1f(program.uniforms.dt, dt);
+
+    // Textures
+    gl.uniform1i(program.uniforms.uVelocity, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.u.src.texture);
+    gl.uniform1i(program.uniforms.vVelocity, 1);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.v.src.texture);
+    gl.uniform1i(program.uniforms.value, 2);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, component.src.texture);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
   applyPressureGradientComponent(gl, component, program, positionBuffer, pressure, dt) {
