@@ -47,7 +47,7 @@ export default class Ink extends DoubleFluidValue {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
-  upwind(gl, positionBuffer, velocity, dt) {
+  upwind(gl, velocity, dt, positionBuffer) {
     gl.useProgram(this.upwindProgram.program);
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.dst.framebuffer);
     gl.viewport(0, 0, ...this.size);

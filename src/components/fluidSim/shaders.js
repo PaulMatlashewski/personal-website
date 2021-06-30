@@ -18,7 +18,7 @@ export const fragmentSource = /*glsl*/`
   uniform sampler2D texture;
 
   void main() {
-    gl_FragColor = vec4(texture2D(texture, vUv).xyz, 1.0);
+    gl_FragColor = texture2D(texture, vUv);
   }
 `;
 
@@ -37,8 +37,12 @@ export const splatSource =  /*glsl*/`
     vec2 p = vUv - point.xy;
     p.x *= aspect;
     vec3 splatValue = exp(-dot(p, p) / radius) * value;
-    vec3 baseValue = texture2D(texture, vUv).xyz;
-    gl_FragColor = vec4(splatValue + baseValue, 1.0);
+    vec4 baseValue = texture2D(texture, vUv);
+    if (dot(p, p) < radius) {
+      gl_FragColor = vec4(splatValue + baseValue.xyz, 1.0);
+    } else {
+      gl_FragColor = baseValue;
+    }
   }
 `;
 
