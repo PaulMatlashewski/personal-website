@@ -1,6 +1,7 @@
-import * as React from 'react'
-import Fluid from './fluid'
-import { fluidCanvas } from './fluidSim.module.css'
+import React, { useState, useEffect, useRef } from 'react'
+import Fluid from './sim/fluid'
+import Toolbar from './toolbar/toolbar'
+import { fluidSim, fluidCanvas } from './fluidSim.module.css'
 
 const resizeCanvas = gl => {
   const dpr = window.devicePixelRatio || 1;
@@ -38,60 +39,24 @@ function getWebGLContext(canvas) {
 }
 
 const FluidSim = () => {
-  const canvasRef = React.useRef();
+  const canvasRef = useRef();
+  const fluidRef = useRef(new Fluid());
 
-  React.useEffect(() => {
-    const canvas = canvasRef.current
+  const defaultResolution = 256;
+  const [simResolution, setSimResolution] = useState(defaultResolution);
+  const [inkResolution, setInkResolution] = useState(defaultResolution);
+
+  // Set up fluid simulation
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const fluid = fluidRef.current;
     const gl = getWebGLContext(canvas);
 
-    const splatPoint = {
-      x: null,
-      y: null,
-      dx: null,
-      dy: null,
-      down: false,
-      moved: false,
-    };
-
-    const getPoint = e => ({
-      x: e.offsetX / gl.canvas.clientWidth,
-      y: 1 - e.offsetY / gl.canvas.clientHeight
-    });
-
-    const onMouseDown = e => {
-      const point = getPoint(e);
-      splatPoint.x = point.x;
-      splatPoint.y = point.y;
-      splatPoint.down = true;
-    }
-
-    const onMouseMove = e => {
-      const point = getPoint(e);
-      let dx = point.x - splatPoint.x;
-      let dy = point.y - splatPoint.y;
-      const aspectRatio = gl.canvas.width / gl.canvas.height;
-      aspectRatio > 1 ? (dy /= aspectRatio) : (dx *= aspectRatio);
-      splatPoint.dx = dx;
-      splatPoint.dy = dy;
-      splatPoint.x = point.x;
-      splatPoint.y = point.y;
-      splatPoint.moved = (Math.abs(splatPoint.dx) > 0) || (Math.abs(splatPoint.dy) > 0);
-    }
-
-    const onMouseUp = e => {
-      splatPoint.down = false;
-      splatPoint.moved = false;
-    }
-
-    canvas.addEventListener('mousedown', onMouseDown);
-    canvas.addEventListener('mousemove', onMouseMove);
-    canvas.addEventListener('mouseup', onMouseUp);
-    
-    const simParams = {
+    const fluidParams = {
       jacobiIters: 20,
       interpolation: 'cubic',
       inkParams: {
-        resolution: 256,
+        resolution: defaultResolution,
         splatRadius: 0.002,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
@@ -100,7 +65,7 @@ const FluidSim = () => {
         bcs: [],
       },
       velocityParams: {
-        resolution: 256,
+        resolution: defaultResolution,
         splatRadius: 0.002,
         splatForce: 15000,
         internalFormat: gl.RGBA,
@@ -117,18 +82,64 @@ const FluidSim = () => {
         ],
       },
       pressureParams: {
-        resolution: 256,
+        resolution: defaultResolution,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
         type: gl.FLOAT,
         filterType: gl.NEAREST,
       }
     };
-    const fluid = new Fluid(gl, simParams);
+
+    fluid.initialize(gl, fluidParams)
+
+    const getPoint = e => ({
+      x: e.offsetX / gl.canvas.clientWidth,
+      y: 1 - e.offsetY / gl.canvas.clientHeight
+    });
+
+    const onMouseDown = e => {
+      const point = getPoint(e);
+      fluid.splatX = point.x;
+      fluid.splatY = point.y;
+      fluid.splatDown = true;
+    }
+
+    const onMouseMove = e => {
+      const point = getPoint(e);
+      let dx = point.x - fluid.splatX;
+      let dy = point.y - fluid.splatY;
+      const aspectRatio = gl.canvas.width / gl.canvas.height;
+      aspectRatio > 1 ? (dy /= aspectRatio) : (dx *= aspectRatio);
+      fluid.splatDx = dx;
+      fluid.splatDy = dy;
+      fluid.splatX = point.x;
+      fluid.splatY = point.y;
+      fluid.splatMoved = (Math.abs(dx) > 0) || (Math.abs(dy) > 0);
+    }
+
+    const onMouseUp = e => {
+      fluid.splatDown = false;
+      fluid.splatMoved = false;
+    }
+
+    canvas.addEventListener('mousedown', onMouseDown);
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseup', onMouseUp);
 
     const render = () => {
-      resizeCanvas(gl);
-      fluid.step(gl, 0.01, splatPoint);
+      if (resizeCanvas(gl)) {
+        fluid.updateInk(gl);
+        fluid.updateVelocity(gl);
+        fluid.updatePressure(gl);
+      };
+
+      // Update fluid if simulation parameters have changed
+      fluid.inkParams.resolution !== fluid.ink.resolution && fluid.updateInk(gl);
+      fluid.velocityParams.resolution !== fluid.velocity.resolution && fluid.updateVelocity(gl);
+      fluid.pressureParams.resolution !== fluid.pressure.resolution && fluid.updatePressure(gl);
+
+      // Simulation
+      fluid.step(gl, 0.01);
       fluid.drawScene(gl);
       requestAnimationFrame(render);
     }
@@ -142,8 +153,23 @@ const FluidSim = () => {
     }
   }, [])
 
+  useEffect(() => {
+    const fluid = fluidRef.current;
+    fluid.velocityParams.resolution = simResolution;
+    fluid.pressureParams.resolution = simResolution;
+    fluid.inkParams.resolution = inkResolution;
+  }, [simResolution, inkResolution])
+
   return (
-    <canvas ref={canvasRef} className={fluidCanvas}/>
+    <div className={fluidSim}>
+      <canvas className={fluidCanvas} ref={canvasRef}/>
+      <Toolbar simParams={{
+        simResolution: simResolution,
+        setSimResolution: setSimResolution,
+        inkResolution: inkResolution,
+        setInkResolution: setInkResolution,
+      }}/>
+    </div>
   )
 }
 

@@ -11,6 +11,7 @@ import {
 export default class Velocity {
   constructor(gl, params) {
     this.params = params;
+    this.resolution = params.resolution;
     this.size = this.getSize(gl);
 
     this.divergenceProgram = new ShaderProgram(gl, vertexSource, divergenceSource);

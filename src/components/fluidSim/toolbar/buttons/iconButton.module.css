@@ -1,0 +1,18 @@
+.icon-button {
+    height: 40px;
+    line-height: 40px;  
+    width: 40px;
+    border-radius: 50%;
+    background-color: #424242;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: filter 0ms;
+    margin: 2px;
+    border: none;
+  }
+
+  .icon-button:hover {
+      filter: brightness(1.2);
+  }
