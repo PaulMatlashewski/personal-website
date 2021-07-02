@@ -93,27 +93,27 @@ const FluidSim = () => {
 
     const onMouseDown = e => {
       const point = getPoint(e);
-      fluid.splatX = point.x;
-      fluid.splatY = point.y;
-      fluid.splatDown = true;
+      fluid.splatPoint.x = point.x;
+      fluid.splatPoint.y = point.y;
+      fluid.splatPoint.down = true;
     }
 
     const onMouseMove = e => {
       const point = getPoint(e);
-      let dx = point.x - fluid.splatX;
-      let dy = point.y - fluid.splatY;
+      let dx = point.x - fluid.splatPoint.x;
+      let dy = point.y - fluid.splatPoint.y;
       const aspectRatio = gl.canvas.width / gl.canvas.height;
       aspectRatio > 1 ? (dy /= aspectRatio) : (dx *= aspectRatio);
-      fluid.splatDx = dx;
-      fluid.splatDy = dy;
-      fluid.splatX = point.x;
-      fluid.splatY = point.y;
-      fluid.splatMoved = (Math.abs(dx) > 0) || (Math.abs(dy) > 0);
+      fluid.splatPoint.dx = dx;
+      fluid.splatPoint.dy = dy;
+      fluid.splatPoint.x = point.x;
+      fluid.splatPoint.y = point.y;
+      fluid.splatPoint.moved = (Math.abs(dx) > 0) || (Math.abs(dy) > 0);
     }
 
     const onMouseUp = e => {
-      fluid.splatDown = false;
-      fluid.splatMoved = false;
+      fluid.splatPoint.down = false;
+      fluid.splatPoint.moved = false;
     }
 
     canvas.addEventListener('mousedown', onMouseDown);
@@ -123,7 +123,7 @@ const FluidSim = () => {
     const render = () => {
       if (resizeCanvas(gl)) {
         fluid.updateInk(gl);
-        fluid.updateVelocity(gl);
+        fluid.updateSim(gl);
       };
 
       // Update fluid if simulation parameters have changed

@@ -82,9 +82,9 @@ export default class Ink extends DoubleFluidValue {
   generateColor() {
     let time = new Date().getTime() / 1000;
     let c = this.HSVtoRGB(time % 1, 1.0, 1.0);
-    c.r *= 0.25;
-    c.g *= 0.25;
-    c.b *= 0.25;
+    c[0] *= 0.25;
+    c[1] *= 0.25;
+    c[2] *= 0.25;
     return c;
   }
 
@@ -106,6 +106,6 @@ export default class Ink extends DoubleFluidValue {
       default: r = v; g = t; b = p;
     }
 
-    return { r, g, b };
+    return [r, g, b];
   }
 }
