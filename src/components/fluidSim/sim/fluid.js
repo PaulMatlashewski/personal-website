@@ -34,7 +34,9 @@ export default class Fluid {
     this.jacobiProgram = new ShaderProgram(gl, vertexSource, jacobiSource);
 
     // Vertex shader position buffer
-    this.positionBuffer = this.initPositionBuffer(gl);
+    this.positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, 1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
 
     // Fluid values
     this.inkParams = params.inkParams;
@@ -78,19 +80,6 @@ export default class Fluid {
     this.updateValue(gl, this.pressure, newPressure);
     this.velocity = newVelocity;
     this.pressure = newPressure;
-  }
-
-  initPositionBuffer(gl) {
-    const positions = new Float32Array([
-      -1.0,  1.0,
-      1.0,  1.0,
-      -1.0, -1.0,
-      1.0, -1.0,
-    ]);
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    return positionBuffer;
   }
 
   applyBoundaryConditions(gl, value) {
