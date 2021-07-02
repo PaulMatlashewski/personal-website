@@ -53,10 +53,10 @@ const FluidSim = () => {
     const gl = getWebGLContext(canvas);
 
     const fluidParams = {
-      jacobiIters: 20,
       interpolation: 'cubic',
+      splatRadius: 0.002,
       inkParams: {
-        resolution: defaultResolution,
+        resolution: 512,
         splatRadius: 0.002,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
@@ -64,10 +64,11 @@ const FluidSim = () => {
         filterType: gl.LINEAR,
         bcs: [],
       },
-      velocityParams: {
-        resolution: defaultResolution,
+      simParams: {
+        resolution: 256,
         splatRadius: 0.002,
         splatForce: 15000,
+        jacobiIters: 20,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
         type: gl.FLOAT,
@@ -80,13 +81,6 @@ const FluidSim = () => {
           { type: 'bottom', from: 0, to: 1, value: [0, 0, 0] },
           { type: 'top', from: 0, to: 1, value: [0, 0, 0] },
         ],
-      },
-      pressureParams: {
-        resolution: defaultResolution,
-        internalFormat: gl.RGBA,
-        format: gl.RGBA,
-        type: gl.FLOAT,
-        filterType: gl.NEAREST,
       }
     };
 
@@ -130,13 +124,11 @@ const FluidSim = () => {
       if (resizeCanvas(gl)) {
         fluid.updateInk(gl);
         fluid.updateVelocity(gl);
-        fluid.updatePressure(gl);
       };
 
       // Update fluid if simulation parameters have changed
       fluid.inkParams.resolution !== fluid.ink.resolution && fluid.updateInk(gl);
-      fluid.velocityParams.resolution !== fluid.velocity.resolution && fluid.updateVelocity(gl);
-      fluid.pressureParams.resolution !== fluid.pressure.resolution && fluid.updatePressure(gl);
+      fluid.simParams.resolution !== fluid.velocity.resolution && fluid.updateSim(gl);
 
       // Simulation
       fluid.step(gl, 0.01);
@@ -155,8 +147,7 @@ const FluidSim = () => {
 
   useEffect(() => {
     const fluid = fluidRef.current;
-    fluid.velocityParams.resolution = simResolution;
-    fluid.pressureParams.resolution = simResolution;
+    fluid.simParams.resolution = simResolution;
     fluid.inkParams.resolution = inkResolution;
   }, [simResolution, inkResolution])
 

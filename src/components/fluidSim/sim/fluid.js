@@ -13,8 +13,8 @@ import {
 } from './shaders'
 
 export default class Fluid {
-  initialize(gl, simParams) {
-    this.jacobiIters = simParams.jacobiIters;
+  initialize(gl, params) {
+    this.jacobiIters = params.simParams.jacobiIters;
     this.splatX = null;
     this.splatY = null;
     this.splatDx = null;
@@ -23,7 +23,7 @@ export default class Fluid {
     this.splatMoved = false;
 
     // Shader programs
-    const advectSource = simParams.interpolation === 'linear' ? linearAdvectSource : cubicAdvectSource;
+    const advectSource = params.interpolation === 'linear' ? linearAdvectSource : cubicAdvectSource;
     this.advectProgram = new ShaderProgram(gl, vertexSource, advectSource);
     this.renderProgram = new ShaderProgram(gl, vertexSource, fragmentSource);
     this.boundaryConditionProgram = new ShaderProgram(gl, vertexSource, boundaryConditionSource);
@@ -33,13 +33,12 @@ export default class Fluid {
     this.positionBuffer = this.initPositionBuffer(gl);
 
     // Fluid values
-    this.inkParams = simParams.inkParams;
-    this.velocityParams = simParams.velocityParams;
-    this.pressureParams = simParams.pressureParams;
+    this.inkParams = params.inkParams;
+    this.simParams = params.simParams;
 
-    this.ink = new Ink(gl, simParams.inkParams);
-    this.velocity = new Velocity(gl, simParams.velocityParams);
-    this.pressure = new Pressure(gl, simParams.pressureParams);
+    this.ink = new Ink(gl, params.inkParams);
+    this.velocity = new Velocity(gl, params.simParams);
+    this.pressure = new Pressure(gl, params.simParams);
   }
 
   updateValue(gl, oldValue, newValue) {
@@ -67,16 +66,13 @@ export default class Fluid {
     this.ink = newInk;
   }
 
-  updateVelocity(gl) {
-    const newVelocity = new Velocity(gl, this.velocityParams);
+  updateSim(gl) {
+    const newVelocity = new Velocity(gl, this.simParams);
+    const newPressure = new Pressure(gl, this.simParams);
     this.updateValue(gl, this.velocity.u, newVelocity.u);
     this.updateValue(gl, this.velocity.v, newVelocity.v);
-    this.velocity = newVelocity;
-  }
-
-  updatePressure(gl) {
-    const newPressure = new Pressure(gl, this.pressureParams);
     this.updateValue(gl, this.pressure, newPressure);
+    this.velocity = newVelocity;
     this.pressure = newPressure;
   }
 
