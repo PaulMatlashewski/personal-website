@@ -14,7 +14,6 @@ import {
 
 export default class Fluid {
   initialize(gl, params) {
-    this.jacobiIters = params.simParams.jacobiIters;
     this.splatPoint = {
       x: null,
       y: null,
@@ -106,42 +105,6 @@ export default class Fluid {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
-  step(gl, dt) {
-    // Advection step
-    this.ink.advect(gl, this.advectProgram, this.velocity, dt, this.positionBuffer);
-    this.velocity.advect(gl, this.advectProgram, this.velocity.u, dt, this.positionBuffer);
-    this.velocity.advect(gl, this.advectProgram, this.velocity.v, dt, this.positionBuffer);
-    this.ink.flip();
-    this.velocity.u.flip();
-    this.velocity.v.flip();
-
-    // Apply forces
-    if (this.splatPoint.down && this.splatPoint.moved) {
-      let inkValue = this.ink.generateColor();
-      let uValue = [this.splatPoint.dx * this.velocity.params.splatForce, 0, 0];
-      let vValue = [this.splatPoint.dy * this.velocity.params.splatForce, 0, 0];
-      this.splat(gl, this.ink, inkValue);
-      this.splat(gl, this.velocity.u, uValue);
-      this.splat(gl, this.velocity.v, vValue);
-      this.ink.flip();
-      this.velocity.u.flip();
-      this.velocity.v.flip();
-    }
-
-    // Projection step
-    this.velocity.divergence(gl, this.positionBuffer, dt);
-    this.jacobi(gl);
-    this.velocity.applyPressureGradient(gl, this.positionBuffer, this.pressure, dt);
-
-    // Boundary conditions
-    this.applyBoundaryConditions(gl, this.ink);
-    this.applyBoundaryConditions(gl, this.velocity.u);
-    this.applyBoundaryConditions(gl, this.velocity.v);
-    this.ink.flip();
-    this.velocity.u.flip();
-    this.velocity.v.flip();
-  }
-
   jacobi(gl) {
     gl.useProgram(this.jacobiProgram.program);
 
@@ -158,7 +121,7 @@ export default class Fluid {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.velocity.div.src.texture);
 
-    for (let i = 0; i < this.jacobiIters; i++) {
+    for (let i = 0; i < this.simParams.jacobiIters; i++) {
       // Write to dst pressure texture
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.pressure.dst.framebuffer);
       gl.viewport(0, 0, ...this.pressure.size);
@@ -198,6 +161,42 @@ export default class Fluid {
     gl.uniform1i(this.splatProgram.uniforms.texture, 0);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+
+  step(gl, dt) {
+    // Advection step
+    this.ink.advect(gl, this.advectProgram, this.velocity, dt, this.positionBuffer);
+    this.velocity.advect(gl, this.advectProgram, this.velocity.u, dt, this.positionBuffer);
+    this.velocity.advect(gl, this.advectProgram, this.velocity.v, dt, this.positionBuffer);
+    this.ink.flip();
+    this.velocity.u.flip();
+    this.velocity.v.flip();
+
+    // Apply forces
+    if (this.splatPoint.down && this.splatPoint.moved) {
+      let inkValue = this.ink.generateColor();
+      let uValue = [this.splatPoint.dx * this.velocity.params.splatForce, 0, 0];
+      let vValue = [this.splatPoint.dy * this.velocity.params.splatForce, 0, 0];
+      this.splat(gl, this.ink, inkValue);
+      this.splat(gl, this.velocity.u, uValue);
+      this.splat(gl, this.velocity.v, vValue);
+      this.ink.flip();
+      this.velocity.u.flip();
+      this.velocity.v.flip();
+    }
+
+    // Projection step
+    this.velocity.divergence(gl, this.positionBuffer, dt);
+    this.jacobi(gl);
+    this.velocity.applyPressureGradient(gl, this.positionBuffer, this.pressure, dt);
+
+    // Boundary conditions
+    this.applyBoundaryConditions(gl, this.ink);
+    this.applyBoundaryConditions(gl, this.velocity.u);
+    this.applyBoundaryConditions(gl, this.velocity.v);
+    this.ink.flip();
+    this.velocity.u.flip();
+    this.velocity.v.flip();
   }
 
   drawScene(gl) {
