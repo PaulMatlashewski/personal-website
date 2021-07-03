@@ -11,12 +11,27 @@
 .container {
     height: 100%;
     margin: 1rem;
+    display: flex;
+    flex-direction: column;
 }
 
-.slider {
-    width: 80%;
+.slider-container {
+    display: grid;
+    grid-template-columns: 2fr 3fr 1fr;
+    grid-template-rows: auto;
+    grid-template-areas: "name slider label";
+    align-items: center;
 }
 
-.text {
+.slider-name {
+    grid-area: name;
     color: white;
+}
+
+.slider-element {
+    grid-area: slider;
+}
+
+.slider-label {
+    grid-area: label;
 }

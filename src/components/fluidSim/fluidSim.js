@@ -38,6 +38,71 @@ function getWebGLContext(canvas) {
   return gl;
 }
 
+const FluidCanvas = React.memo(props => {
+  console.log('rendering canvas')
+    // Set up fluid simulation
+    useEffect(() => {
+      const canvas = props.canvasRef.current;
+      const fluid = props.fluidRef.current;
+      const gl = getWebGLContext(canvas);
+  
+      const fluidParams = {
+        interpolation: 'cubic',
+        splatRadius: 0.002,
+        inkParams: {
+          resolution: 256,
+          splatRadius: 0.002,
+          internalFormat: gl.RGBA,
+          format: gl.RGBA,
+          type: gl.FLOAT,
+          filterType: gl.LINEAR,
+          bcs: [],
+        },
+        simParams: {
+          resolution: 256,
+          dt: 0.01,
+          splatRadius: 0.002,
+          splatForce: 100,
+          jacobiIters: 20,
+          internalFormat: gl.RGBA,
+          format: gl.RGBA,
+          type: gl.FLOAT,
+          filterType: gl.NEAREST,
+          uBcs: [
+              { type: 'left', from: 0, to: 1, value: [0, 0, 0] },
+              { type: 'right', from: 0, to: 1, value: [0, 0, 0] },
+          ],
+          vBcs: [
+            { type: 'bottom', from: 0, to: 1, value: [0, 0, 0] },
+            { type: 'top', from: 0, to: 1, value: [0, 0, 0] },
+          ],
+        }
+      };
+  
+      fluid.initialize(gl, fluidParams);
+
+      const render = () => {
+        if (resizeCanvas(gl)) {
+          fluid.updateInk(gl);
+          fluid.updateSim(gl);
+        };
+  
+        // Update fluid if simulation parameters have changed
+        fluid.inkParams.resolution !== fluid.ink.resolution && fluid.updateInk(gl);
+        fluid.simParams.resolution !== fluid.velocity.resolution && fluid.updateSim(gl);
+  
+        // Simulation
+        fluid.step(gl);
+        fluid.drawScene(gl);
+        requestAnimationFrame(render);
+      }
+  
+      requestAnimationFrame(render);
+  }, [props.canvasRef, props.fluidRef]);
+
+  return <canvas className={fluidCanvas} ref={props.canvasRef}/>;
+});
+
 const FluidSim = () => {
   const canvasRef = useRef();
   const fluidRef = useRef(new Fluid());
@@ -53,41 +118,6 @@ const FluidSim = () => {
     const canvas = canvasRef.current;
     const fluid = fluidRef.current;
     const gl = getWebGLContext(canvas);
-
-    const fluidParams = {
-      interpolation: 'cubic',
-      splatRadius: 0.002,
-      inkParams: {
-        resolution: defaultResolution,
-        splatRadius: 0.002,
-        internalFormat: gl.RGBA,
-        format: gl.RGBA,
-        type: gl.FLOAT,
-        filterType: gl.LINEAR,
-        bcs: [],
-      },
-      simParams: {
-        resolution: defaultResolution,
-        dt: defaultDt,
-        splatRadius: 0.002,
-        splatForce: 100,
-        jacobiIters: 20,
-        internalFormat: gl.RGBA,
-        format: gl.RGBA,
-        type: gl.FLOAT,
-        filterType: gl.NEAREST,
-        uBcs: [
-            { type: 'left', from: 0, to: 1, value: [0, 0, 0] },
-            { type: 'right', from: 0, to: 1, value: [0, 0, 0] },
-        ],
-        vBcs: [
-          { type: 'bottom', from: 0, to: 1, value: [0, 0, 0] },
-          { type: 'top', from: 0, to: 1, value: [0, 0, 0] },
-        ],
-      }
-    };
-
-    fluid.initialize(gl, fluidParams)
 
     const getPoint = e => ({
       x: e.offsetX / gl.canvas.clientWidth,
@@ -123,24 +153,6 @@ const FluidSim = () => {
     canvas.addEventListener('mousemove', onMouseMove);
     canvas.addEventListener('mouseup', onMouseUp);
 
-    const render = () => {
-      if (resizeCanvas(gl)) {
-        fluid.updateInk(gl);
-        fluid.updateSim(gl);
-      };
-
-      // Update fluid if simulation parameters have changed
-      fluid.inkParams.resolution !== fluid.ink.resolution && fluid.updateInk(gl);
-      fluid.simParams.resolution !== fluid.velocity.resolution && fluid.updateSim(gl);
-
-      // Simulation
-      fluid.step(gl);
-      fluid.drawScene(gl);
-      requestAnimationFrame(render);
-    }
-
-    requestAnimationFrame(render);
-
     return () => {
       canvas.removeEventListener('mousedown', onMouseDown);
       canvas.removeEventListener('mousemove', onMouseMove);
@@ -152,11 +164,12 @@ const FluidSim = () => {
     const fluid = fluidRef.current;
     fluid.simParams.resolution = simResolution;
     fluid.inkParams.resolution = inkResolution;
-  }, [simResolution, inkResolution])
+    fluid.simParams.dt = dt;
+  }, [simResolution, inkResolution, dt])
 
   return (
     <div className={fluidSim}>
-      <canvas className={fluidCanvas} ref={canvasRef}/>
+      <FluidCanvas canvasRef={canvasRef} fluidRef={fluidRef} />
       <Toolbar simParams={{
         simResolution: simResolution,
         setSimResolution: setSimResolution,
