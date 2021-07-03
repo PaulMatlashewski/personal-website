@@ -163,6 +163,9 @@ export default class Fluid {
 
   step(gl) {
     const dt = this.simParams.dt;
+    if (Math.abs(dt) < 1e-6) {
+      return;
+    }
     // // Advection step
     this.ink.advect(gl, this.advectProgram, this.velocity, dt, this.positionBuffer);
     this.velocity.advect(gl, this.advectProgram, this.velocity.u, dt, this.positionBuffer);

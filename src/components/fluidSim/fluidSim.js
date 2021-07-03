@@ -39,7 +39,6 @@ function getWebGLContext(canvas) {
 }
 
 const FluidCanvas = React.memo(props => {
-  console.log('rendering canvas')
     // Set up fluid simulation
     useEffect(() => {
       const canvas = props.canvasRef.current;

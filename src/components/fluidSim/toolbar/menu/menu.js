@@ -83,7 +83,7 @@ const Menu = props => {
               classes={{markLabel: classes.markLabel}}
               value={props.simParams.dt}
               step={0.001}
-              min={0.001}
+              min={0.0}
               max={0.05}
               onChange={updateTimeSlider}
             />
