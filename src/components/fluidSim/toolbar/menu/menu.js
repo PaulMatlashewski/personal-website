@@ -49,6 +49,7 @@ const Menu = props => {
   const updateTimeSlider = (e, level) => props.simParams.setDt(level);
   const updateJacobiIters = (e, level) => props.simParams.setJacobiIters(level);
   const updateSplatForce = (e, level) => props.simParams.setSplatForce(level);
+  const updateSplatRadius = (e, level) => props.simParams.setSplatRadius(level);
 
   return (
     <div className={menu}>
@@ -130,6 +131,24 @@ const Menu = props => {
             <TextField
               className={sliderLabel}
               value={props.simParams.splatForce}
+              inputProps={{ style: {textAlign: 'right', fontSize: 12}}}
+              InputProps={{ disableUnderline: true}}
+            />
+          </div>
+          <div className={sliderContainer}>
+            <Typography className={sliderName} variant='subtitle1'>Splat Radius</Typography>
+            <Slider
+              className={sliderElement}
+              classes={{markLabel: classes.markLabel}}
+              value={props.simParams.splatRadius}
+              step={0.0001}
+              min={0.0001}
+              max={0.01}
+              onChange={updateSplatRadius}
+            />
+            <TextField
+              className={sliderLabel}
+              value={(props.simParams.splatRadius * 10000).toFixed(0)}
               inputProps={{ style: {textAlign: 'right', fontSize: 12}}}
               InputProps={{ disableUnderline: true}}
             />

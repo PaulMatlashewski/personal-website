@@ -23,7 +23,8 @@ export default class Fluid {
       dy: null,
       down: false,
       moved: false,
-      radius: params.splatRadius
+      radius: params.splatRadius,
+      force: params.splatForce
     }
 
     // Shader programs
@@ -177,8 +178,8 @@ export default class Fluid {
     // Apply forces
     if (this.splatPoint.down && this.splatPoint.moved) {
       let inkValue = this.ink.generateColor();
-      let uValue = [this.splatPoint.dx * this.simParams.splatForce, 0, 0];
-      let vValue = [this.splatPoint.dy * this.simParams.splatForce, 0, 0];
+      let uValue = [this.splatPoint.dx * this.splatPoint.force, 0, 0];
+      let vValue = [this.splatPoint.dy * this.splatPoint.force, 0, 0];
       this.splat(gl, this.ink, inkValue);
       this.splat(gl, this.velocity.u, uValue);
       this.splat(gl, this.velocity.v, vValue);

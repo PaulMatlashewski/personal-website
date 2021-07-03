@@ -48,9 +48,9 @@ const FluidCanvas = React.memo(props => {
       const fluidParams = {
         interpolation: 'cubic',
         splatRadius: 0.002,
+        splatForce: 100,
         inkParams: {
           resolution: 256,
-          splatRadius: 0.002,
           internalFormat: gl.RGBA,
           format: gl.RGBA,
           type: gl.FLOAT,
@@ -60,8 +60,6 @@ const FluidCanvas = React.memo(props => {
         simParams: {
           resolution: 256,
           dt: 0.01,
-          splatRadius: 0.002,
-          splatForce: 100,
           jacobiIters: 20,
           internalFormat: gl.RGBA,
           format: gl.RGBA,
@@ -113,6 +111,7 @@ const FluidSim = () => {
   const [dt, setDt] = useState(defaultDt);
   const [jacobiIters, setJacobiIters] = useState(20);
   const [splatForce, setSplatForce] = useState(100);
+  const [splatRadius, setSplatRadius] = useState(0.002);
 
   // Set up fluid simulation
   useEffect(() => {
@@ -167,8 +166,9 @@ const FluidSim = () => {
     fluid.inkParams.resolution = inkResolution;
     fluid.simParams.dt = dt;
     fluid.simParams.jacobiIters = jacobiIters;
-    fluid.simParams.splatForce = splatForce;
-  }, [simResolution, inkResolution, dt, jacobiIters, splatForce])
+    fluid.splatPoint.force = splatForce;
+    fluid.splatPoint.radius = splatRadius;
+  }, [simResolution, inkResolution, dt, jacobiIters, splatForce, splatRadius])
 
   return (
     <div className={fluidSim}>
@@ -183,7 +183,9 @@ const FluidSim = () => {
         jacobiIters: jacobiIters,
         setJacobiIters: setJacobiIters,
         splatForce: splatForce,
-        setSplatForce: setSplatForce
+        setSplatForce: setSplatForce,
+        splatRadius: splatRadius,
+        setSplatRadius: setSplatRadius,
       }}/>
     </div>
   )
