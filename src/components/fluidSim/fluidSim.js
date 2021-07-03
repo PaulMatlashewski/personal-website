@@ -112,6 +112,7 @@ const FluidSim = () => {
   const [inkResolution, setInkResolution] = useState(defaultResolution);
   const [dt, setDt] = useState(defaultDt);
   const [jacobiIters, setJacobiIters] = useState(20);
+  const [splatForce, setSplatForce] = useState(100);
 
   // Set up fluid simulation
   useEffect(() => {
@@ -166,7 +167,8 @@ const FluidSim = () => {
     fluid.inkParams.resolution = inkResolution;
     fluid.simParams.dt = dt;
     fluid.simParams.jacobiIters = jacobiIters;
-  }, [simResolution, inkResolution, dt, jacobiIters])
+    fluid.simParams.splatForce = splatForce;
+  }, [simResolution, inkResolution, dt, jacobiIters, splatForce])
 
   return (
     <div className={fluidSim}>
@@ -180,6 +182,8 @@ const FluidSim = () => {
         setDt: setDt,
         jacobiIters: jacobiIters,
         setJacobiIters: setJacobiIters,
+        splatForce: splatForce,
+        setSplatForce: setSplatForce
       }}/>
     </div>
   )

@@ -177,8 +177,8 @@ export default class Fluid {
     // Apply forces
     if (this.splatPoint.down && this.splatPoint.moved) {
       let inkValue = this.ink.generateColor();
-      let uValue = [this.splatPoint.dx * this.velocity.params.splatForce, 0, 0];
-      let vValue = [this.splatPoint.dy * this.velocity.params.splatForce, 0, 0];
+      let uValue = [this.splatPoint.dx * this.simParams.splatForce, 0, 0];
+      let vValue = [this.splatPoint.dy * this.simParams.splatForce, 0, 0];
       this.splat(gl, this.ink, inkValue);
       this.splat(gl, this.velocity.u, uValue);
       this.splat(gl, this.velocity.v, vValue);

@@ -48,6 +48,7 @@ const Menu = props => {
   const updateInkResolutionSlider = (e, level) => props.simParams.setInkResolution(resolutionLevelToValue[level]);
   const updateTimeSlider = (e, level) => props.simParams.setDt(level);
   const updateJacobiIters = (e, level) => props.simParams.setJacobiIters(level);
+  const updateSplatForce = (e, level) => props.simParams.setSplatForce(level);
 
   return (
     <div className={menu}>
@@ -93,7 +94,7 @@ const Menu = props => {
             <TextField
               className={sliderLabel}
               value={props.simParams.dt.toFixed(3)}
-              inputProps={{ style: {textAlign: 'center', fontSize: 12}}}
+              inputProps={{ style: {textAlign: 'right', fontSize: 12}}}
               InputProps={{ disableUnderline: true}}
             />
           </div>
@@ -111,7 +112,25 @@ const Menu = props => {
             <TextField
               className={sliderLabel}
               value={props.simParams.jacobiIters}
-              inputProps={{ style: {textAlign: 'center', fontSize: 12}}}
+              inputProps={{ style: {textAlign: 'right', fontSize: 12}}}
+              InputProps={{ disableUnderline: true}}
+            />
+          </div>
+          <div className={sliderContainer}>
+            <Typography className={sliderName} variant='subtitle1'>Splat Force</Typography>
+            <Slider
+              className={sliderElement}
+              classes={{markLabel: classes.markLabel}}
+              value={props.simParams.splatForce}
+              step={10}
+              min={10}
+              max={300}
+              onChange={updateSplatForce}
+            />
+            <TextField
+              className={sliderLabel}
+              value={props.simParams.splatForce}
+              inputProps={{ style: {textAlign: 'right', fontSize: 12}}}
               InputProps={{ disableUnderline: true}}
             />
           </div>
