@@ -43,8 +43,10 @@ const FluidSim = () => {
   const fluidRef = useRef(new Fluid());
 
   const defaultResolution = 256;
+  const defaultDt = 0.01;
   const [simResolution, setSimResolution] = useState(defaultResolution);
   const [inkResolution, setInkResolution] = useState(defaultResolution);
+  const [dt, setDt] = useState(defaultDt);
 
   // Set up fluid simulation
   useEffect(() => {
@@ -56,7 +58,7 @@ const FluidSim = () => {
       interpolation: 'cubic',
       splatRadius: 0.002,
       inkParams: {
-        resolution: 512,
+        resolution: defaultResolution,
         splatRadius: 0.002,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
@@ -65,9 +67,10 @@ const FluidSim = () => {
         bcs: [],
       },
       simParams: {
-        resolution: 256,
+        resolution: defaultResolution,
+        dt: defaultDt,
         splatRadius: 0.002,
-        splatForce: 15000,
+        splatForce: 100,
         jacobiIters: 20,
         internalFormat: gl.RGBA,
         format: gl.RGBA,
@@ -131,7 +134,7 @@ const FluidSim = () => {
       fluid.simParams.resolution !== fluid.velocity.resolution && fluid.updateSim(gl);
 
       // Simulation
-      fluid.step(gl, 0.01);
+      fluid.step(gl);
       fluid.drawScene(gl);
       requestAnimationFrame(render);
     }
@@ -159,6 +162,8 @@ const FluidSim = () => {
         setSimResolution: setSimResolution,
         inkResolution: inkResolution,
         setInkResolution: setInkResolution,
+        dt: dt,
+        setDt: setDt,
       }}/>
     </div>
   )

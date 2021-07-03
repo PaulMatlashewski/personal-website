@@ -14,6 +14,8 @@ import {
 
 export default class Fluid {
   initialize(gl, params) {
+    this.inkParams = params.inkParams;
+    this.simParams = params.simParams;
     this.splatPoint = {
       x: null,
       y: null,
@@ -38,9 +40,6 @@ export default class Fluid {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, 1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
 
     // Fluid values
-    this.inkParams = params.inkParams;
-    this.simParams = params.simParams;
-
     this.ink = new Ink(gl, params.inkParams);
     this.velocity = new Velocity(gl, params.simParams);
     this.pressure = new Pressure(gl, params.simParams);
@@ -76,7 +75,6 @@ export default class Fluid {
     const newPressure = new Pressure(gl, this.simParams);
     this.updateValue(gl, this.velocity.u, newVelocity.u);
     this.updateValue(gl, this.velocity.v, newVelocity.v);
-    this.updateValue(gl, this.pressure, newPressure);
     this.velocity = newVelocity;
     this.pressure = newPressure;
   }
@@ -163,8 +161,9 @@ export default class Fluid {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
-  step(gl, dt) {
-    // Advection step
+  step(gl) {
+    const dt = this.simParams.dt;
+    // // Advection step
     this.ink.advect(gl, this.advectProgram, this.velocity, dt, this.positionBuffer);
     this.velocity.advect(gl, this.advectProgram, this.velocity.u, dt, this.positionBuffer);
     this.velocity.advect(gl, this.advectProgram, this.velocity.v, dt, this.positionBuffer);

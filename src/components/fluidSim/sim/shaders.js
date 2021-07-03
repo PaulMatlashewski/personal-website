@@ -84,9 +84,15 @@ export const linearAdvectSource = /*glsl*/`
   }
 
   vec2 euler(vec2 p, sampler2D u, sampler2D v, vec2 size, vec2 scale, float dt) {
+    float aspectRatio = scale.x / scale.y;
     vec4 dx = bilinear_interp(p, u, size, size + vec2(1, 0), vec2(0.0, 0.5));
     vec4 dy = bilinear_interp(p, v, size, size + vec2(0, 1), vec2(0.5, 0.0));
-    return p + vec2(dx.x, dy.x) / scale * dt;
+    if (aspectRatio > 1.0) {
+      dx.x /= aspectRatio;
+    } else {
+      dy.x *= aspectRatio;
+    }
+    return p + vec2(dx.x, dy.x) * dt;
   }
 
   void main() {
@@ -200,9 +206,15 @@ export const cubicAdvectSource = /*glsl*/`
   }
 
   vec2 euler(vec2 p, sampler2D u, sampler2D v, vec2 size, vec2 scale, float dt) {
+    float aspectRatio = scale.x / scale.y;
     vec4 dx = bilinear_interp(p, u, size, size + vec2(1, 0), vec2(0.0, 0.5));
     vec4 dy = bilinear_interp(p, v, size, size + vec2(0, 1), vec2(0.5, 0.0));
-    return p + vec2(dx.x, dy.x) / scale * dt;
+    if (aspectRatio > 1.0) {
+      dx.x /= aspectRatio;
+    } else {
+      dy.x *= aspectRatio;
+    }
+    return p + vec2(dx.x, dy.x) * dt;
   }
 
   void main() {
@@ -454,7 +466,7 @@ export const boundaryConditionSource = /*glsl*/`
     // The alpha value of the bc indicates
     // whether or not it is active
     if (bc_value.a > 0.5) {
-      gl_FragColor = vec4(bc_value.xyz, tex_value.a);
+      gl_FragColor = bc_value;
     } else {
       gl_FragColor = tex_value;
     }
