@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { Link } from 'gatsby'
 import {
   card,
   container,
@@ -7,15 +8,16 @@ import {
   cardHorizontalRule,
 } from './card.module.css'
 
-const Card = ({ children }) => {
+const Card = ({ children, page }) => {
   return (
     <div className={card}>
       <div className={container}>
         {children}
         <hr className={cardHorizontalRule} />
         <div className={buttonList}>
-          <button className={cardButton}><b>DEMO</b></button>
-          <button className={cardButton}><b>BLOG</b></button>
+            <Link className={cardButton} to={page}>
+            <b>DEMO</b>
+            </Link>
         </div>
       </div>
     </div>
