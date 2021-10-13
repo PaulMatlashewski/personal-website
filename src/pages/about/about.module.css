@@ -1,22 +1,16 @@
-.profileCard {
+.aboutCard {
     margin: 0;
     position: absolute;
     top: 30%;
     left: 50%;
     -ms-transform: translate(-50%, -50%);
     transform: translate(-50%, -50%);
+    text-align: justify;
+    max-width: 1000px;
+    overflow-wrap: normal;
     font-family: 'Roboto';
 }
 
 .title {
     color: rgb(250, 250, 250);
-}
-
-.links {
-    display: flex;
-    justify-content: center;
-}
-
-.link {
-    margin: 0 5px;
 }

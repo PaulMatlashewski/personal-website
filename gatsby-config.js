@@ -13,5 +13,14 @@ module.exports = {
         path: `${__dirname}/blog`,
       }
     },
+    {
+      resolve: `gatsby-plugin-google-fonts`,
+      options: {
+        fonts: [
+          `Roboto`,
+        ],
+        display: 'swap'
+      }
+    }
   ],
 };
