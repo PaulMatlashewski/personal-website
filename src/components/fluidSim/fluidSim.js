@@ -16,7 +16,7 @@ const resizeCanvas = gl => {
   return false;
 }
 
-function getWebGLContext(canvas) {
+const getWebGLContext = canvas => {
   const webGLParams = {
     alpha: true,
     depth: false,
@@ -104,11 +104,9 @@ const FluidSim = () => {
   const canvasRef = useRef();
   const fluidRef = useRef(new Fluid());
 
-  const defaultResolution = 256;
-  const defaultDt = 0.01;
-  const [simResolution, setSimResolution] = useState(defaultResolution);
-  const [inkResolution, setInkResolution] = useState(defaultResolution);
-  const [dt, setDt] = useState(defaultDt);
+  const [simResolution, setSimResolution] = useState(256);
+  const [inkResolution, setInkResolution] = useState(256);
+  const [dt, setDt] = useState(0.01);
   const [jacobiIters, setJacobiIters] = useState(20);
   const [splatForce, setSplatForce] = useState(100);
   const [splatRadius, setSplatRadius] = useState(0.002);
