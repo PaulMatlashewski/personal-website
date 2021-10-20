@@ -1,0 +1,36 @@
+.slider {
+    --thumb-position: 50%;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(
+        to right, 
+        rgba(129, 212, 250, 1) var(--thumb-position),
+        rgba(129, 212, 250, 0.2) var(--thumb-position)
+    );
+    outline: none; /* Remove outline */
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+/* Slider handle for Chrome, Opera, Safari, Edge */
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgb(129, 212, 250);
+    margin: 0;
+    cursor: pointer;
+}
+  
+  /* Slider handle for Firefox */
+  .slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgb(129, 212, 250);
+    cursor: pointer;
+}

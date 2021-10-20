@@ -1,6 +1,11 @@
-import * as React from 'react'
+import * as React from 'react';
 import { createMuiTheme, ThemeProvider, makeStyles } from '@material-ui/core/styles';
-import Slider from '@material-ui/core/Slider'
+import Slider from '@material-ui/core/Slider';
+import CustomSlider from '../ui/slider/slider';
+import DiscreteSlider from '../ui/discreteSlider/discreteSlider';
+import MenuItem from '@material-ui/core/MenuItem';
+import Input from '@material-ui/core/Input';
+import Select from '@material-ui/core/Select';
 import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
 import {
@@ -10,6 +15,7 @@ import {
   sliderName,
   sliderElement,
   sliderLabel,
+  selectItem
 } from './menu.module.css'
 
 const useStyles = makeStyles({
@@ -41,15 +47,19 @@ const Menu = props => {
     { value: 3, label: '256'}, { value: 4, label: '512'}, { value: 5, label: '1028' }
   ]
 
+  const customLabels = [32, 64, 128, 256, 512, 1028];
+
   const resolutionLevelToValue = { 0: 32, 1: 64, 2: 128, 3: 256, 4: 512, 5: 1028 };
   const resolutionValueToLevel = { 32: 0, 64: 1, 128: 2, 256: 3, 512: 4, 1028: 5 };
 
   const updateSimulationResolutionSlider = (e, level) => props.simParams.setSimResolution(resolutionLevelToValue[level]);
   const updateInkResolutionSlider = (e, level) => props.simParams.setInkResolution(resolutionLevelToValue[level]);
+  const updateInkResolutionSliderCustom = (level) => props.simParams.setInkResolution(level);
   const updateTimeSlider = (e, level) => props.simParams.setDt(level);
   const updateJacobiIters = (e, level) => props.simParams.setJacobiIters(level);
-  const updateSplatForce = (e, level) => props.simParams.setSplatForce(level);
+  const updateSplatForce = (event) => props.simParams.setSplatForce(event.target.value);
   const updateSplatRadius = (e, level) => props.simParams.setSplatRadius(level);
+  const setInterpolation = (e, interp) => props.simParams.setInterpolation(interp.props.value);
 
   return (
     <div className={menu}>
@@ -82,6 +92,13 @@ const Menu = props => {
             />
           </div>
           <div className={sliderContainer}>
+            <Typography className={sliderName} variant='subtitle1'>Discrete</Typography>
+            <DiscreteSlider
+              value={props.simParams.inkResolution}
+              values={customLabels}
+              onChange={updateInkResolutionSliderCustom}/>
+          </div>
+          {/* <div className={sliderContainer}>
             <Typography className={sliderName} variant='subtitle1'>Simulation Speed</Typography>
             <Slider
               className={sliderElement}
@@ -119,13 +136,11 @@ const Menu = props => {
           </div>
           <div className={sliderContainer}>
             <Typography className={sliderName} variant='subtitle1'>Splat Force</Typography>
-            <Slider
-              className={sliderElement}
-              classes={{markLabel: classes.markLabel}}
+            <CustomSlider
               value={props.simParams.splatForce}
-              step={10}
               min={10}
               max={300}
+              step={10}
               onChange={updateSplatForce}
             />
             <TextField
@@ -153,6 +168,18 @@ const Menu = props => {
               InputProps={{ disableUnderline: true}}
             />
           </div>
+          <div className={sliderContainer}>
+            <Typography className={sliderName} variant='subtitle1'>Interpolation</Typography>
+              <Select
+                input={<Input className={selectItem}/>}
+                value={props.simParams.interpolation}
+                onChange={setInterpolation}
+                label="Interpolation"
+              >
+                <MenuItem value={'linear'}>linear</MenuItem>
+                <MenuItem value={'cubic'}>cubic</MenuItem>
+              </Select>
+          </div> */}
         </ThemeProvider>
       </div>
     </div>

@@ -110,6 +110,7 @@ const FluidSim = () => {
   const [jacobiIters, setJacobiIters] = useState(20);
   const [splatForce, setSplatForce] = useState(100);
   const [splatRadius, setSplatRadius] = useState(0.002);
+  const [interpolation, setInterpolation] = useState('cubic');
 
   // Set up fluid simulation
   useEffect(() => {
@@ -158,6 +159,7 @@ const FluidSim = () => {
     }
   }, [])
 
+  // Update fluid simulation
   useEffect(() => {
     const fluid = fluidRef.current;
     fluid.simParams.resolution = simResolution;
@@ -167,6 +169,11 @@ const FluidSim = () => {
     fluid.splatPoint.force = splatForce;
     fluid.splatPoint.radius = splatRadius;
   }, [simResolution, inkResolution, dt, jacobiIters, splatForce, splatRadius])
+
+  useEffect(() => {
+    const fluid = fluidRef.current;
+    fluid.updateInterpolation(interpolation);
+  }, [interpolation])
 
   return (
     <div className={fluidSim}>
@@ -184,6 +191,8 @@ const FluidSim = () => {
         setSplatForce: setSplatForce,
         splatRadius: splatRadius,
         setSplatRadius: setSplatRadius,
+        interpolation: interpolation,
+        setInterpolation: setInterpolation
       }}/>
     </div>
   )

@@ -35,3 +35,7 @@
 .slider-label {
     grid-area: label;
 }
+
+.select-item {
+    font-size: 12;
+}

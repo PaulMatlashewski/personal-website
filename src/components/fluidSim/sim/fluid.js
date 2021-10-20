@@ -28,12 +28,16 @@ export default class Fluid {
     }
 
     // Shader programs
-    const advectSource = params.interpolation === 'linear' ? linearAdvectSource : cubicAdvectSource;
-    this.advectProgram = new ShaderProgram(gl, vertexSource, advectSource);
+    this.linearAdvectProgram = new ShaderProgram(gl, vertexSource, linearAdvectSource);
+    this.cubicAdvectProgram = new ShaderProgram(gl, vertexSource, cubicAdvectSource);
     this.renderProgram = new ShaderProgram(gl, vertexSource, fragmentSource);
     this.boundaryConditionProgram = new ShaderProgram(gl, vertexSource, boundaryConditionSource);
     this.splatProgram = new ShaderProgram(gl, vertexSource, splatSource);
     this.jacobiProgram = new ShaderProgram(gl, vertexSource, jacobiSource);
+    this.advectProgram = null; // Set via updateInterpolation
+
+    // Interpolation type
+    this.updateInterpolation(params.interpolation);
 
     // Vertex shader position buffer
     this.positionBuffer = gl.createBuffer();
@@ -44,6 +48,10 @@ export default class Fluid {
     this.ink = new Ink(gl, params.inkParams);
     this.velocity = new Velocity(gl, params.simParams);
     this.pressure = new Pressure(gl, params.simParams);
+  }
+
+  updateInterpolation(interpolation) {
+    this.advectProgram = interpolation === 'linear' ? this.linearAdvectProgram : this.cubicAdvectProgram;
   }
 
   updateValue(gl, oldValue, newValue) {
@@ -164,10 +172,11 @@ export default class Fluid {
 
   step(gl) {
     const dt = this.simParams.dt;
+    // Don't update sim if time step is small
     if (Math.abs(dt) < 1e-6) {
       return;
     }
-    // // Advection step
+    // Advection step
     this.ink.advect(gl, this.advectProgram, this.velocity, dt, this.positionBuffer);
     this.velocity.advect(gl, this.advectProgram, this.velocity.u, dt, this.positionBuffer);
     this.velocity.advect(gl, this.advectProgram, this.velocity.v, dt, this.positionBuffer);
