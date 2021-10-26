@@ -11,7 +11,7 @@ const AboutPage = () => {
           I'm a M.Sc. student in geophysics at The University of British Columbia. I like writing code to solve challenging problems.
         </p>
         <p>
-          <a style={{color: '#2196f3'}} href='https://drive.google.com/file/d/1QrDPpv6y1RpTYb5y7MfjFBmHxqneIL7W/view?usp=sharing' target="_blank">
+          <a style={{color: '#2196f3'}} href='https://drive.google.com/file/d/1QrDPpv6y1RpTYb5y7MfjFBmHxqneIL7W/view?usp=sharing' target="_blank" rel="noreferrer">
             My Resume
           </a>
         </p>
