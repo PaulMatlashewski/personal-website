@@ -4,6 +4,7 @@
     grid-template-rows: auto;
     grid-template-areas: "name slider value";
     align-items: center;
+    margin: 2px 0px;
 }
 
 .slider-name {
