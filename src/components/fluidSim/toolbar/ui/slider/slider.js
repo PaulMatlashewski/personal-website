@@ -6,6 +6,11 @@ const thumbPosition = (value, min, max) => {
   return position.toString() + '%';
 }
 
+const thumbCorrection = (value, min, max) => {
+  const position = (value - min) / (max - min) * 100 - 50;
+  return position.toString() + '%';
+}
+
 const CustomSlider = props => (
   <input
     className={slider}
@@ -15,7 +20,12 @@ const CustomSlider = props => (
     max={props.max}
     step={props.step}
     onChange={props.onChange}
-    style={{'--thumb-position': thumbPosition(props.value, props.min, props.max)}}
+    style={
+      {
+        '--thumb-position': thumbPosition(props.value, props.min, props.max),
+        '--thumb-correction': thumbCorrection(props.value, props.min, props.max),
+      }
+    }
   />
 )
 

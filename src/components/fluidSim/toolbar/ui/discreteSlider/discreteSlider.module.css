@@ -23,7 +23,7 @@
 } */
 
 .slider-value {
-    --left-val: 0%;
+    --left-val: 0%; /* This is set with JavaScript depending on the number of values */
     position: absolute;
     top: 0;
     left: var(--left-val);
