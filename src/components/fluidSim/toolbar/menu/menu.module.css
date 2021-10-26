@@ -26,6 +26,8 @@
 .slider-name {
     grid-area: name;
     color: white;
+    font-size: 12px;
+    font-family: 'Roboto';
 }
 
 .slider-element {
@@ -34,6 +36,10 @@
 
 .slider-label {
     grid-area: label;
+    color: white;
+    font-size: 12px;
+    font-family: 'Roboto';
+    text-align: right;
 }
 
 .select-item {

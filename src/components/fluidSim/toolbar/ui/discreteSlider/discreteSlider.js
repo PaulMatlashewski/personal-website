@@ -22,7 +22,6 @@ const DiscreteSlider = props => {
         step={1}
         onChange={event => props.onChange(props.values[event.target.value])}
       />
-      {/* <div className={sliderLabels} style={{'--num-labels': props.values.length}}> */}
       <div className={sliderLabels}>
         {labels}
       </div>
