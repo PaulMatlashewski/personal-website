@@ -1,3 +1,26 @@
+.slider-container {
+    display: grid;
+    grid-template-columns: 2fr 3fr 1fr;
+    grid-template-rows: auto;
+    grid-template-areas: "name slider value";
+    align-items: center;
+}
+
+.slider-name {
+    grid-area: name;
+    color: white;
+    font-size: 12px;
+    font-family: 'Roboto';
+}
+
+.slider-value {
+    grid-area: value;
+    color: white;
+    font-size: 12px;
+    font-family: 'Roboto';
+    text-align: right;
+}
+
 .slider {
     --thumb-position: 50%;
     --thumb-correction: 0%;
@@ -39,4 +62,26 @@
     cursor: pointer;
     -moz-transform:translate(var(--thumb-correction), 0);
     transform: translate(var(--thumb-correction), 0);
+}
+
+.slider-labels {
+    width: 100%;
+    height: 20px;
+    position: relative;
+    justify-items: center;
+}
+
+.slider-label {
+    --left-val: 0%;
+    position: absolute;
+    top: 0;
+    left: var(--left-val);
+    color: white;
+    font-size: 12px;
+    font-family: 'Roboto';
+    -webkit-transform: translate(-50%, 0);
+    -moz-transform:translate(-50%, 0);
+    -ms-transform:translate(-50%, 0);
+    -o-transform:translate(-50%, 0);
+    transform: translate(-50%, 0);
 }

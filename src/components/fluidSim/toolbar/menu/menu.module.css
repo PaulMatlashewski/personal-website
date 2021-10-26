@@ -14,34 +14,3 @@
     display: flex;
     flex-direction: column;
 }
-
-.slider-container {
-    display: grid;
-    grid-template-columns: 2fr 3fr 1fr;
-    grid-template-rows: auto;
-    grid-template-areas: "name slider label";
-    align-items: center;
-}
-
-.slider-name {
-    grid-area: name;
-    color: white;
-    font-size: 12px;
-    font-family: 'Roboto';
-}
-
-.slider-element {
-    grid-area: slider;
-}
-
-.slider-label {
-    grid-area: label;
-    color: white;
-    font-size: 12px;
-    font-family: 'Roboto';
-    text-align: right;
-}
-
-.select-item {
-    font-size: 12;
-}
