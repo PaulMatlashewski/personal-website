@@ -15,7 +15,6 @@
     "clean": "gatsby clean"
   },
   "dependencies": {
-    "@material-ui/core": "^4.11.4",
     "gatsby": "^4.0.0",
     "gatsby-link": "^4.0.0",
     "gatsby-plugin-gatsby-cloud": "^4.0.0",
